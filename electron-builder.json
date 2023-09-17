@@ -9,7 +9,7 @@
   "appId": "com.alex313031.apple-music-desktop",
   "generateUpdatesFilesForAllChannels": false,
   "directories": {
-      "app": "app",
+      "app": "src",
       "buildResources": "build",
       "output": "dist"
   },

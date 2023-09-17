@@ -8,16 +8,16 @@
   "author": "Alex313031",
   "license": "BSD-3-Clause",
   "repository": "https://github.com/Alex313031/apple-music-desktop",
-  "main": "./app/app.js",
+  "main": "./src/app.js",
   "engines": {
     "node": ">=14"
   },
   "scripts": {
     "test": "npm run eslint ; npm run stylelint",
     "lint": "npm run eslint ; npm run stylelint",
-    "clean": "rimraf dist && rimraf node_modules && cd app && npm run clean",
+    "clean": "rimraf dist && rimraf test && rimraf node_modules && cd src && npm run clean",
     "distclean": "rimraf dist",
-    "burn": "rimraf package-lock.json && rimraf ./app/package-lock.json",
+    "burn": "rimraf package-lock.json && rimraf ./src/package-lock.json",
     "build": "electron-builder --dir",
     "buildWin": "electron-builder -w --x64 --dir && electron-builder -w --ia32 --dir",
     "buildMac": "electron-builder -m --x64 --dir && electron-builder -m --arm64 --dir",
@@ -25,11 +25,11 @@
     "distLinux": "electron-builder -l",
     "distWin": "electron-builder -w --x64 --pd dist/win-unpacked && electron-builder -w --ia32 --pd dist/win-ia32-unpacked",
     "distMac": "electron-builder -m --x64 --pd dist/mac && electron-builder -m --arm64 --pd dist/mac-arm64",
-    "eslint": "eslint \"app/**/*.js*\"",
-    "stylelint": "stylelint \"app/**/*.css*\"",
-    "start": "electron ./app",
-    "winstart": "electron app",
-    "dev": "electron --enable-logging=file --user-data-dir=./test ./app",
+    "eslint": "eslint \"src/**/*.js*\"",
+    "stylelint": "stylelint \"src/**/*.css*\"",
+    "start": "electron ./src",
+    "winstart": "electron src",
+    "dev": "electron --enable-logging=file --user-data-dir=./test ./src",
     "postinstall": "electron-builder install-app-deps"
   },
   "dependencies": {
