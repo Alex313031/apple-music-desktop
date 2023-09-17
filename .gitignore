@@ -6,6 +6,7 @@ Thumbs.db
 /test/
 /release/
 node_modules
+yarn.lock
 
 # IntelliJ platform
 .idea/

@@ -1,10 +1,13 @@
 const { app, BrowserWindow, components, dialog, Menu, nativeTheme, shell, Tray } = require('electron');
 const electronLog = require('electron-log');
 const contextMenu = require('electron-context-menu');
+const Store = require('electron-store');
 const path = require('path');
+const fs = require('fs');
 const url = require('url');
 const appName = app.getName();
 const userDataDir = app.getPath('userData');
+const userLogFile = path.join(userDataDir, 'logs/main.log');
 
 // Initialize Electron remote module
 require('@electron/remote/main').initialize();
@@ -24,9 +27,17 @@ const isMac = process.platform === 'darwin';
 
 let mainWindow; // Global Windows object
 let mainActivated; // Global activate? object
-let tray; // Global tray object
+let mainURL; // Global URL destination object
 const argsCmd = process.argv; // Global cmdline object.
 const mainMenu = require('./menu'); // menu.js
+// Create config.json
+const store = new Store();
+
+if (store.get('options.useBetaSite')) {
+  mainURL = 'https://beta.music.apple.com/';
+} else {
+  mainURL = 'https://music.apple.com/';
+}
 
 function createWindow () {
   mainWindow = new BrowserWindow({
@@ -37,12 +48,12 @@ function createWindow () {
     height: 700,
     useContentSize: true,
     icon: isWin ? path.join(__dirname, 'imgs/icon.ico') : path.join(__dirname, 'imgs/icon64.png'),
-    darkTheme: true,
+    darkTheme: store.get('options.useLightMode') ? false : true,
     webPreferences: {
       nodeIntegration: false,
       nodeIntegrationInWorker: false,
       contextIsolation: false,
-      sandbox: false,
+      sandbox: true,
       experimentalFeatures: true,
       webviewTag: true,
       devTools: true,
@@ -54,12 +65,16 @@ function createWindow () {
     }
   });
   require("@electron/remote/main").enable(mainWindow.webContents);
-  Menu.setApplicationMenu(mainMenu());
+  Menu.setApplicationMenu(mainMenu(app, store));
 
-  nativeTheme.themeSource = 'dark';
+  if (store.get('options.useLightMode')) {
+    nativeTheme.themeSource = 'light';
+  } else {
+    nativeTheme.themeSource = 'dark';
+  }
 
   // Load the index.html or webpage of the app.
-  mainWindow.loadURL('https://music.apple.com/');
+  mainWindow.loadURL(mainURL);
 
   // Emitted when the window is closed.
   mainWindow.on('closed', () => {
@@ -67,45 +82,87 @@ function createWindow () {
   });
 }
 
-function createTray() {
-  const trayContextMenu = Menu.buildFromTemplate([
-    { label: 'Minimize to Tray',
-      click: function () {
-        mainWindow.hide();
-        electronLog.info('Minimized to Tray');
-      }
-    },
-    { label: 'Quit',
-      click: function () {
-        app.quit();
-      }
-    }
-  ]);
+app.on('change-site', () => {
+  if (store.get('options.useBetaSite')) {
+    mainURL = 'https://beta.music.apple.com/';
+  } else {
+    mainURL = 'https://music.apple.com/';
+  }
+  mainWindow.loadURL(mainURL);
+});
 
-  // Set the tray icon and name
-  const trayIcon = isWin ? path.join(__dirname, 'imgs/icon.ico') : path.join(__dirname, 'imgs/icon64.png'),
-  tray = new Tray(trayIcon);
-  electronLog.info('createTray() succeeded');
-  tray.setToolTip(appName);
-  // Create tray menu items
-  tray.setContextMenu(trayContextMenu)
-  tray.on('click', () => {
-    if (mainWindow.isVisible()) {
-      mainWindow.focus();
-    } else {
-      mainWindow.show();
-    }
-  });
+function minimizeToTray () {
+  mainWindow.hide();
+  electronLog.info('Minimized to Tray');
 }
+
+app.on('minimize-to-tray', () => {
+  minimizeToTray();
+});
+
+function handleTray() {
+  if (store.get('options.disableTray')) {
+    return;
+  } else {
+    const trayContextMenu = Menu.buildFromTemplate([
+      { label: 'Minimize to Tray',
+        click: function () {
+          minimizeToTray();
+        }
+      },
+      { label: 'Quit',
+        click: function () {
+          app.quit();
+        }
+      }
+    ]);
+
+    // Set the tray icon and name
+    const trayIcon = isWin ? path.join(__dirname, 'imgs/icon.ico') : path.join(__dirname, 'imgs/icon64.png'),
+    tray = new Tray(trayIcon);
+    tray.setToolTip(appName);
+    // Create tray menu items
+    tray.setContextMenu(trayContextMenu)
+    tray.on('click', () => {
+      if (mainWindow.isVisible()) {
+        mainWindow.focus();
+      } else {
+        mainWindow.show();
+      }
+    });
+    electronLog.info('handleTray() succeeded');
+  }
+}
+
+app.on('handle-tray', () => {
+  handleTray();
+});
 
 function createPopOutWindow() {
   const popoutWindow = new BrowserWindow({
-    width: 500,
-    height: 900,
-    useContentSize: true
+    width: 1024,
+    height: 768,
+    title: undefined,
+    useContentSize: true,
+    webPreferences: {
+      nodeIntegration: false,
+      nodeIntegrationInWorker: false,
+      contextIsolation: false,
+      sandbox: true,
+      experimentalFeatures: true,
+      webviewTag: true,
+      devTools: true,
+      javascript: true,
+      plugins: true,
+      enableRemoteModule: true,
+    }
   });
-  popoutWindow.loadURL('');
+  popoutWindow.loadURL('https://www.google.com/');
 }
+
+app.on('popout', () => {
+  createPopOutWindow();
+});
 
 contextMenu({
   showSelectAll: false,
@@ -134,7 +191,7 @@ contextMenu({
           nodeIntegration: false,
           nodeIntegrationInWorker: false,
           contextIsolation: false,
-          sandbox: false,
+          sandbox: true,
           experimentalFeatures: true,
           webviewTag: true,
           devTools: true,
@@ -160,7 +217,7 @@ contextMenu({
           nodeIntegration: false,
           nodeIntegrationInWorker: false,
           contextIsolation: false,
-          sandbox: false,
+          sandbox: true,
           experimentalFeatures: true,
           webviewTag: true,
           devTools: true,
@@ -232,12 +289,19 @@ app.on('activate', () => {
 });
 
 app.whenReady().then(async () => {
-  // Initialize Widevine
-  await components.whenReady();
-  electronLog.info('WidevineCDM component ready.');
-  logAppInfo();
-  createWindow();
-  createTray();
+  if (argsCmd.includes('--cdm-info')) {
+    await components.whenReady();
+    console.log('WidevineCDM Component Info:\n');
+    console.log(components.status());
+    app.quit();
+  } else {
+    // Initialize Widevine
+    await components.whenReady();
+    electronLog.info('WidevineCDM component ready.');
+    logAppInfo();
+    createWindow();
+    handleTray();
+  }
 });
 
 function logAppInfo () {
