@@ -1,0 +1,208 @@
+:root,
+:root.light {
+  --bgcolor: #dedede;
+  --invert: #24292f;
+  --fontcolor: #000000;
+  --linkcolor: #0000ee;
+  --visitedcolor: #551a8b;
+  --preformatted: #000000;
+  --accent-bg: #aecbfa;
+  --accent-fg: #24292f;
+  --border: #000000;
+  --buttonborder: #222222;
+  --construction: #aa00aa;
+  --code: #000000;
+  --shadow: #ffffff;
+  --shadow2: #000000;
+  --link: #006400;
+  --imgshadow: #000000;
+  --coc: #000000;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bgcolor: #24292f;
+    --invert: #dedede;
+    --fontcolor: #ffffff;
+    --linkcolor: #5bf5bf;
+    --visitedcolor: #ae5ee0;
+    --preformatted: #ffffff;
+    --accent-bg: #2b2b2b;
+    --accent-fg: #aecbfa;
+    --border: #ffffff;
+    --buttonborder: #dcdcdc;
+    --construction: #fbbc04;
+    --code: #fbbc04;
+    --shadow: #000000;
+    --shadow2: #ffffff;
+    --link: #90ee90;
+    --imgshadow: #ffffff;
+    --coc: #000000;
+  }
+}
+:root.dark {
+  --bgcolor: #24292f;
+  --invert: #dedede;
+  --fontcolor: #ffffff;
+  --linkcolor: #5bf5bf;
+  --visitedcolor: #ae5ee0;
+  --preformatted: #ffffff;
+  --accent-bg: #2b2b2b;
+  --accent-fg: #aecbfa;
+  --border: #ffffff;
+  --buttonborder: #dcdcdc;
+  --construction: #fbbc04;
+  --code: #fbbc04;
+  --shadow: #000000;
+  --shadow2: #ffffff;
+  --link: #90ee90;
+  --imgshadow: #ffffff;
+  --coc: #000000;
+}
+/* Prefer border-box */
+* {
+    box-sizing: border-box;
+}
+html {
+  font-family: "Roboto", sans-serif;
+}
+hr {
+  background-color: #7E0315;
+  height: 2px;
+  border: none;
+}
+/* General body settings */
+body {
+  margin-top: 0px;
+  margin-bottom: 0px;
+  margin-left: auto;
+  margin-right: auto;
+  max-width: 95%;
+  font-family: "Roboto", sans-serif;
+  color: var(--fontcolor);
+  background-color: var(--bgcolor);
+}
+img {
+  max-width: 100%;
+  height: auto;
+}
+video {
+  max-width: 100%;
+  height: auto;
+}
+div.row {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  height: auto;
+  margin-top: 12px;
+  margin-bottom: 12px;
+  margin-left: auto;
+  margin-right: auto;
+}
+div.gallery {
+  margin-top: 0px;
+  margin-bottom: 0px;
+  margin-left: 2px;
+  margin-right: 2px;
+  width: 33.33%;
+  height: auto;
+}
+img.yiff {
+  border: 1px solid var(--border);
+  filter: drop-shadow(1px 1px 1px var(--imgshadow));
+  margin: auto;
+}
+img.yiff:hover {
+  border: 1px solid #7E0315;
+  filter: drop-shadow(1px 1px 1px #7E0315);
+  margin: auto;
+}
+video.yiff {
+  border: 1px solid var(--border);
+  filter: drop-shadow(1px 1px 1px var(--imgshadow));
+  margin: auto;
+}
+video.yiff:hover {
+  border: 1px solid #7E0315;
+  filter: drop-shadow(1px 1px 1px #7E0315);
+}
+p.center {
+  text-align: center;
+  margin-top: 12px;
+  margin-bottom: 12px;
+  margin-left: auto;
+  margin-right: auto;
+}
+.center {
+  text-align: center;
+}
+/* Rounded Dark/Light Mode Button */
+button {
+  font-family: inherit;
+  box-shadow: 1px 1px 1px 0px var(--buttonborder);
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  text-align: center;
+  background-color: #828282;
+  color: #ffffff;
+}
+button:hover {
+  background-color: #999999;
+}
+button:active {
+  box-shadow: 1px 1px 1px 0px #222222 inset;
+  background-color: #888888;
+}
+.ver {
+  color: var(--construction);
+}
+/* Set link colours */
+a:link {
+  color: var(--linkcolor);
+}
+b {
+  text-shadow: 1px 1px 1px var(--shadow);
+}
+b.link {
+  color: var(--linkcolor);
+}
+li.link {
+  color: var(--link);
+  font-weight: 600;
+}
+a:visited,a:active {
+  color: var(--visitedcolor);
+}
+.yiffdiv {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+}
+/* Width & Height */
+::-webkit-scrollbar {
+  width: 11px;
+  height: auto;
+}
+/* Track*/
+body::-webkit-scrollbar-track {
+  background-color: transparent;
+}
+/* Track Piece*/
+body::-webkit-scrollbar-track-piece {
+  background-color: transparent;
+  -webkit-border-radius: 5px;
+}
+/* Handle */
+body::-webkit-scrollbar-thumb { 
+  height: auto;
+  background-color: #24292f; 
+  -webkit-border-radius: 5px;
+  border: 1px solid rgba(255, 255, 255, 1.0);
+}
+/* Handle on Hover */
+body::-webkit-scrollbar-thumb:hover {
+  height: auto;
+  background-color: #404040;
+  -webkit-border-radius: 5px;
+  border: 1px solid rgba(255, 255, 255, 1.0);
+}

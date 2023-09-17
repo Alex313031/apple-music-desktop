@@ -1,0 +1,16 @@
+{
+    "env": {
+        "browser": true,
+        "commonjs": true,
+        "es2020": true,
+        "node": true
+    },
+    "extends": [ "eslint:recommended" ],
+    "parserOptions": {
+        "ecmaVersion": "2020"
+    },
+    "ignorePatterns": [ "package.json", "package-lock.json", ".eslintrc.json" ],
+    "rules": {
+        "no-redeclare": [ "warn" ]
+    }
+}

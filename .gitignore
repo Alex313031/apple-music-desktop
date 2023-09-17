@@ -1,0 +1,15 @@
+.DS_Store
+.eslintcache
+Thumbs.db
+/dist/
+/electron/
+/test/
+/release/
+node_modules
+
+# IntelliJ platform
+.idea/
+*.iml
+
+# Dolphin file manager
+.directory

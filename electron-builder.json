@@ -1,0 +1,65 @@
+{
+  "electronVersion": "22.3.24",
+  "electronDownload": {
+    "version": "22.3.24+wvcus",
+    "mirror": "https://github.com/castlabs/electron-releases/releases/download/v"
+  },
+  "asar": true,
+  "productName": "Apple Music",
+  "appId": "com.alex313031.apple-music-desktop",
+  "generateUpdatesFilesForAllChannels": false,
+  "directories": {
+      "app": "app",
+      "buildResources": "build",
+      "output": "dist"
+  },
+  "extraFiles": [
+    {
+      "from": "assets/icon.png"
+    },
+    {
+      "from": "assets/README.txt"
+    }
+  ],
+  "files": [
+    "**/*"
+  ],
+  "linux": {
+    "target": [
+      "zip",
+      "deb",
+      "appimage"
+    ],
+    "maintainer": "Alex313031",
+    "vendor": "Alex313031",
+    "synopsis": "An Electron app that provides a native Apple Music experience for Linux & Windows.",
+    "category": "AudioVideo;",
+    "executableName": "apple-music",
+    "artifactName": "apple-music_${version}_${arch}.${ext}",
+    "desktop": {
+      "Name": "Apple Music",
+      "StartupWMClass": "apple-music",
+      "Keywords": "apple;music;",
+      "Icon": "apple-music"
+    }
+  },
+  "win": {
+    "target": [
+      "zip",
+      "nsis",
+      "portable"
+    ],
+    "publisherName": "Alex313031",
+    "executableName": "apple_music",
+    "artifactName": "apple_music_win64_${version}_${arch}.${ext}"
+  },
+  "nsis": {
+    "shortcutName": "Apple Music",
+    "artifactName": "apple_music_setup_${version}_${arch}.${ext}",
+    "deleteAppDataOnUninstall": true,
+    "uninstallDisplayName": "Apple Music ${version}"
+  },
+  "portable": {
+    "artifactName": "apple_music_portable_${version}_${arch}.${ext}"
+  }
+}
