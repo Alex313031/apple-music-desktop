@@ -57,6 +57,7 @@
     "shortcutName": "Apple Music",
     "artifactName": "apple_music_setup_${version}_${arch}.${ext}",
     "deleteAppDataOnUninstall": true,
+    "oneClick": false,
     "uninstallDisplayName": "Apple Music ${version}"
   },
   "portable": {
