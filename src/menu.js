@@ -8,6 +8,7 @@ const url = require('url');
 const appName = app.getName();
 const userDataDir = app.getPath('userData');
 const userLogFile = path.join(userDataDir, 'logs/main.log');
+const userConfigJson = path.join(userDataDir, 'config.json');
 
 // Get app version from package.json
 var appVersion = app.getVersion();
@@ -33,7 +34,8 @@ module.exports = (app, store) => {
         accelerator: 'Alt+Left',
         click(item, focusedWindow) {
           if (focusedWindow) focusedWindow.webContents.goBack();
-          electronLog.info('Navigated back');
+          var currentURL = focusedWindow.webContents.getURL();
+          electronLog.info('Navigated backward to ' + [ currentURL ]);
         }
       },
       {
@@ -41,7 +43,8 @@ module.exports = (app, store) => {
         accelerator: 'Alt+Right',
         click(item, focusedWindow) {
           if (focusedWindow) focusedWindow.webContents.goForward();
-          electronLog.info('Navigated forward');
+          var currentURL = focusedWindow.webContents.getURL();
+          electronLog.info('Navigated forward to ' + [ currentURL ]);
         }
       },
       {
@@ -129,7 +132,7 @@ module.exports = (app, store) => {
         checked: false
       },
       {
-        label: 'Open Config File',
+        label: 'Edit Config File',
         click() {
           store.openInEditor();
           electronLog.info('Editing Config File');
@@ -184,6 +187,7 @@ module.exports = (app, store) => {
         label: 'Open Electron DevTools',
         accelerator: isMac ? 'CmdorCtrl+Shift+F12' : 'F12',
         click(item, focusedWindow) {
+          electronLog.info('Opening Electron DevTools on mainWindow');
           focusedWindow.openDevTools({ mode: 'detach' });
         }
       },
@@ -191,8 +195,16 @@ module.exports = (app, store) => {
         label: 'Open Log File',
         click() {
           electronLog.info('Opening ' + [ userLogFile ]);
-          const logWindow = new BrowserWindow({width: 600, height: 700, useContentSize: true, title: "main.log"});
+          const logWindow = new BrowserWindow({width: 600, height: 700, useContentSize: true, title: userLogFile});
           logWindow.loadFile(userLogFile);
+        }
+      },
+      {
+        label: 'Open config.json',
+        click() {
+          electronLog.info('Opening ' + [ userConfigJson ]);
+          const confWindow = new BrowserWindow({width: 600, height: 700, useContentSize: true, title: userConfigJson});
+          confWindow.loadFile(userConfigJson);
         }
       },
       {
@@ -203,7 +215,7 @@ module.exports = (app, store) => {
         }
       },
       {
-        label: 'Create PopOut Window',
+        label: 'Create Popout Window',
         click() {
           app.emit('popout');
         }

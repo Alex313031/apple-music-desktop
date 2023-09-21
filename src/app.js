@@ -75,6 +75,11 @@ function createWindow () {
 
   // Load the index.html or webpage of the app.
   mainWindow.loadURL(mainURL);
+  if (mainURL == 'https://beta.music.apple.com/') {
+    electronLog.warn('Note: Using Beta site');
+  } else {
+    return;
+  }
 
   // Emitted when the window is closed.
   mainWindow.on('closed', () => {
@@ -85,10 +90,13 @@ function createWindow () {
 app.on('change-site', () => {
   if (store.get('options.useBetaSite')) {
     mainURL = 'https://beta.music.apple.com/';
+    logMessage = 'Note: Switching to Beta site';
   } else {
     mainURL = 'https://music.apple.com/';
+    logMessage = 'Note: Switching to regular site';
   }
   mainWindow.loadURL(mainURL);
+  electronLog.warn(logMessage);
 });
 
 function minimizeToTray () {
@@ -101,36 +109,50 @@ app.on('minimize-to-tray', () => {
 });
 
 function handleTray() {
-  if (store.get('options.disableTray')) {
-    return;
-  } else {
-    const trayContextMenu = Menu.buildFromTemplate([
-      { label: 'Minimize to Tray',
-        click: function () {
-          minimizeToTray();
+  try {
+    if (store.get('options.disableTray')) {
+      return;
+    } else {
+      var needsFixing = (mainWindow.isVisible() && isLinux);
+      const trayContextMenu = Menu.buildFromTemplate([
+        { label: 'Minimize to Tray',
+          click: function () {
+            minimizeToTray();
+          }
+        },
+        { label: 'Show',
+          visible: needsFixing,
+          click: function () {
+            mainWindow.show();
+          }
+        },
+        { label: 'Quit',
+          click: function () {
+            app.quit();
+          }
         }
-      },
-      { label: 'Quit',
-        click: function () {
-          app.quit();
-        }
-      }
-    ]);
+      ]);
 
-    // Set the tray icon and name
-    const trayIcon = isWin ? path.join(__dirname, 'imgs/icon.ico') : path.join(__dirname, 'imgs/icon64.png'),
-    tray = new Tray(trayIcon);
-    tray.setToolTip(appName);
-    // Create tray menu items
-    tray.setContextMenu(trayContextMenu)
-    tray.on('click', () => {
-      if (mainWindow.isVisible()) {
-        mainWindow.focus();
-      } else {
-        mainWindow.show();
-      }
-    });
-    electronLog.info('handleTray() succeeded');
+      // Set the tray icon and name
+      const trayIcon = isWin ? path.join(__dirname, 'imgs/icon.ico') : path.join(__dirname, 'imgs/icon64.png'),
+      tray = new Tray(trayIcon);
+      tray.setToolTip(appName);
+      // Create tray menu items
+      tray.setContextMenu(trayContextMenu)
+      tray.on('click', () => {
+        if (mainWindow.isVisible()) {
+          mainWindow.focus();
+        } else {
+          mainWindow.show();
+        }
+      });
+      tray.on('double-click', () => {
+        mainWindow.restore();
+      });
+      electronLog.info('handleTray() succeeded');
+    }
+  } catch (error) {
+    electronLog.error('handleTray() failed: ' + error);
   }
 }
 
@@ -297,6 +319,7 @@ app.whenReady().then(async () => {
   } else {
     // Initialize Widevine
     await components.whenReady();
+    electronLog.info('Welcome to Apple Music Desktop!');
     electronLog.info('WidevineCDM component ready.');
     logAppInfo();
     createWindow();
@@ -305,7 +328,6 @@ app.whenReady().then(async () => {
 });
 
 function logAppInfo () {
-  electronLog.info('Welcome to Apple Music Desktop!');
   electronLog.info('App Version: ' + [ appVersion ]);
   electronLog.info('Electron Version: ' + [ electronVersion ]);
   electronLog.info('Chromium Version: ' + [ chromeVersion ]);
