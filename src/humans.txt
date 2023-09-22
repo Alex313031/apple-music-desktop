@@ -16,10 +16,13 @@
 /* THANKS */
 	
 	ciderapp
+	sindresorhus
+	castlabs
+	electronjs
 
 /* WEBPAGE */
 
-	Last update: 2023/09/17
+	Last update: 2023/09/21
 	Language: English
 	Doctype: HTML5, CSS, WebGL
 	IDE: Geany

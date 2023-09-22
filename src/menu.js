@@ -23,11 +23,11 @@ const isLinux = process.platform === 'linux';
 const isWin = process.platform === 'win32';
 const isMac = process.platform === 'darwin';
 
-module.exports = (app, store) => {
+module.exports = (app, store, mainWindow) => {
   return Menu.buildFromTemplate([
   {
     role: 'fileMenu',
-    label: 'Apple Music',
+    label: appName,
     submenu: [
       {
         label: 'Go Back',
@@ -63,7 +63,7 @@ module.exports = (app, store) => {
         acceleratorWorksWhenHidden: false,
         click(item, focusedWindow) {
           if (focusedWindow) focusedWindow.minimize();
-          electronLog.info('Minimized Window');
+          electronLog.info('Minimized a Window');
         }
       },
       {
@@ -71,7 +71,7 @@ module.exports = (app, store) => {
         accelerator: 'CmdorCtrl+W',
         click(item, focusedWindow) {
           if (focusedWindow) focusedWindow.close();
-          electronLog.info('Closed a window');
+          electronLog.info('Closed a Window');
         }
       },
       { type: 'separator' },
@@ -102,6 +102,10 @@ module.exports = (app, store) => {
             store.set('options.useLightMode', true);
           }
           app.emit('restart-confirm');
+          store.set('relaunch.windowDetails', {
+            position: mainWindow.getPosition(),
+            size: mainWindow.getSize()
+          });
         },
         checked: false
       },
@@ -119,6 +123,18 @@ module.exports = (app, store) => {
         checked: store.get('options.useBetaSite')
       },
       {
+        label: 'Remember Window Position',
+        type: 'checkbox',
+        click() {
+          if (store.get('options.windowDetails')) {
+            store.delete('options.windowDetails');
+          } else {
+            store.set('options.windowDetails', {});
+          }
+        },
+        checked: !!store.get('options.windowDetails')
+      },
+      {
         label: store.get('options.disableTray') ? 'Enable Tray' : 'Disable Tray',
         type: 'checkbox',
         click(e) {
@@ -127,6 +143,10 @@ module.exports = (app, store) => {
           } else {
             store.set('options.disableTray', true);
           }
+          store.set('relaunch.windowDetails', {
+            position: mainWindow.getPosition(),
+            size: mainWindow.getSize()
+          });
           app.emit('restart-confirm');
         },
         checked: false
@@ -161,17 +181,16 @@ module.exports = (app, store) => {
     label: 'View',
     submenu: [
       { role: 'reload' },
+      { role: 'forceReload' },
       {
-        label: 'Reload F5',
-        accelerator:  'F5',
-        visible: false,
-        acceleratorWorksWhenHidden: true,
+        label: 'Toggle Developer Tools',
+        accelerator: isMac ? 'Alt+Command+I' : 'Ctrl+Shift+I',
         click(item, focusedWindow) {
-          if (focusedWindow) focusedWindow.webContents.reload();
+          var currentURL = focusedWindow.webContents.getURL();
+          electronLog.info('Toggling Developer Tools on ' + currentURL);
+          focusedWindow.webContents.toggleDevTools();
         }
       },
-      { role: 'forceReload' },
-      { role: 'toggleDevTools' },
       { type: 'separator' },
       { role: 'resetZoom' },
       { role: 'zoomIn' },
@@ -184,11 +203,12 @@ module.exports = (app, store) => {
     label: 'Developer',
     submenu: [
       {
-        label: 'Open Electron DevTools',
-        accelerator: isMac ? 'CmdorCtrl+Shift+F12' : 'F12',
+        label: 'Reload F5',
+        accelerator:  'F5',
+        visible: false,
+        acceleratorWorksWhenHidden: true,
         click(item, focusedWindow) {
-          electronLog.info('Opening Electron DevTools on mainWindow');
-          focusedWindow.openDevTools({ mode: 'detach' });
+          if (focusedWindow) focusedWindow.webContents.reload();
         }
       },
       {
@@ -222,12 +242,39 @@ module.exports = (app, store) => {
       },
       { type: 'separator' },
       {
+        label: 'Open Electron DevTools',
+        accelerator: isMac ? 'Cmd+Shift+F12' : 'F12',
+        click(item, focusedWindow) {
+          electronLog.info('Opening Electron DevTools on mainWindow.');
+          focusedWindow.openDevTools({ mode: 'detach' });
+        }
+      },
+      {
+        label: 'Open Electron DevTools Extra',
+        accelerator: 'Ctrl+Shift+F12',
+        visible: false,
+        acceleratorWorksWhenHidden: true,
+        click(item, focusedWindow) {
+          electronLog.info('Opening Electron DevTools on mainWindow.');
+          focusedWindow.openDevTools({ mode: 'detach' });
+        }
+      },
+      {
         label: 'Open chrome://gpu',
         accelerator: 'CmdorCtrl+Alt+G',
         click() {
           const gpuWindow = new BrowserWindow({width: 900, height: 700, useContentSize: true, title: "GPU Internals"});
           gpuWindow.loadURL('chrome://gpu');
           electronLog.info('Opened chrome://gpu');
+        }
+      },
+      {
+        label: 'Open chrome://process-internals',
+        accelerator: 'CmdorCtrl+Alt+P',
+        click() {
+          const procsWindow = new BrowserWindow({width: 900, height: 700, useContentSize: true, title: "Process Model Internals"});
+          procsWindow.loadURL('chrome://process-internals');
+          electronLog.info('Opened chrome://process-internals');
         }
       },
       {
@@ -248,7 +295,7 @@ module.exports = (app, store) => {
       { label: 'Apple Music Desktop v' + app.getVersion(), enabled: false },
       { label: 'Created by Alex313031',
         click() {
-          new BrowserWindow({width: 1024, height: 768, useContentSize: true}).loadURL('https://github.com/Alex313031/apple-music-desktop#readme');
+          new BrowserWindow({width: 1024, height: 700, useContentSize: true}).loadURL('https://github.com/Alex313031/apple-music-desktop#readme');
         }
       },
       { type: 'separator' },
@@ -256,7 +303,7 @@ module.exports = (app, store) => {
         label: 'View Humans.txt',
         accelerator: 'CmdorCtrl+Alt+Shift+H',
         click() {
-          const humansWindow = new BrowserWindow({width: 400, height: 432, useContentSize: true, title: "humans.txt", darkTheme: store.get('options.useLightMode') ? false : true});
+          const humansWindow = new BrowserWindow({width: 400, height: 450, useContentSize: true, title: "humans.txt", darkTheme: store.get('options.useLightMode') ? false : true});
           humansWindow.loadFile('./humans.txt');
           electronLog.info('Opened humans.txt :)');
         }

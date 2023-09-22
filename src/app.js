@@ -8,6 +8,13 @@ const url = require('url');
 const appName = app.getName();
 const userDataDir = app.getPath('userData');
 const userLogFile = path.join(userDataDir, 'logs/main.log');
+const userConfigJson = path.join(userDataDir, 'config.json');
+
+// Load in the header script for modifying DOM
+const headerScript = fs.readFileSync(
+  path.join(__dirname, 'js/index.js'),
+  'utf8'
+);
 
 // Initialize Electron remote module
 require('@electron/remote/main').initialize();
@@ -39,9 +46,9 @@ if (store.get('options.useBetaSite')) {
   mainURL = 'https://music.apple.com/';
 }
 
-function createWindow () {
+async function createWindow () {
   mainWindow = new BrowserWindow({
-    title: 'Apple Music',
+    title: appName,
     resizable: true,
     maximizable: true,
     width: 1024,
@@ -65,7 +72,28 @@ function createWindow () {
     }
   });
   require("@electron/remote/main").enable(mainWindow.webContents);
-  Menu.setApplicationMenu(mainMenu(app, store));
+  Menu.setApplicationMenu(mainMenu(app, store, mainWindow));
+
+  // Reset the Window's size and location
+  let windowDetails = store.get('options.windowDetails');
+  let relaunchWindowDetails = store.get('relaunch.windowDetails');
+  if (relaunchWindowDetails) {
+    mainWindow.setSize(
+      relaunchWindowDetails.size[0],
+      relaunchWindowDetails.size[1]
+    );
+    mainWindow.setPosition(
+      relaunchWindowDetails.position[0],
+      relaunchWindowDetails.position[1]
+    );
+    store.delete('relaunch.windowDetails');
+  } else if (windowDetails) {
+    mainWindow.setSize(windowDetails.size[0], windowDetails.size[1]);
+    mainWindow.setPosition(
+      windowDetails.position[0],
+      windowDetails.position[1]
+    );
+  }
 
   if (store.get('options.useLightMode')) {
     nativeTheme.themeSource = 'light';
@@ -75,11 +103,35 @@ function createWindow () {
 
   // Load the index.html or webpage of the app.
   mainWindow.loadURL(mainURL);
+  mainWindow.on('page-title-updateds', function(e) {
+    e.preventDefault()
+  });
   if (mainURL == 'https://beta.music.apple.com/') {
     electronLog.warn('Note: Using Beta site');
-  } else {
-    return;
   }
+
+  // Emitted when the window is closing
+  mainWindow.on('close', () => {
+    // If enabled store the window details so they can be restored upon restart
+    if (store.get('options.windowDetails')) {
+      if (mainWindow) {
+        store.set('options.windowDetails', {
+          position: mainWindow.getPosition(),
+          size: mainWindow.getSize()
+        });
+        electronLog.error('Saved windowDetails.');
+      } else {
+        electronLog.error('Error: mainWindow was not defined while trying to save windowDetails.');
+        return;
+      }
+    }
+    electronLog.info('mainWindow.close()');
+  });
+
+  // Inject Header Script on Page Load
+  mainWindow.webContents.on('did-finish-load', () => {
+    browserWindowDomReady();
+  });
 
   // Emitted when the window is closed.
   mainWindow.on('closed', () => {
@@ -96,12 +148,23 @@ app.on('change-site', () => {
     logMessage = 'Note: Switching to regular site';
   }
   mainWindow.loadURL(mainURL);
+  mainWindow.on('page-title-updated', function(e) {
+    e.preventDefault()
+  });
   electronLog.warn(logMessage);
 });
 
 function minimizeToTray () {
   mainWindow.hide();
   electronLog.info('Minimized to Tray');
+}
+
+function showFromTray () {
+  if (mainWindow.isVisible()) {
+    mainWindow.focus();
+  } else {
+    mainWindow.show();
+  }
 }
 
 app.on('minimize-to-tray', () => {
@@ -113,7 +176,7 @@ function handleTray() {
     if (store.get('options.disableTray')) {
       return;
     } else {
-      var needsFixing = (mainWindow.isVisible() && isLinux);
+      var needsFixing = (isLinux);
       const trayContextMenu = Menu.buildFromTemplate([
         { label: 'Minimize to Tray',
           click: function () {
@@ -124,6 +187,7 @@ function handleTray() {
           visible: needsFixing,
           click: function () {
             mainWindow.show();
+            electronLog.info('Restored from Tray');
           }
         },
         { label: 'Quit',
@@ -140,14 +204,12 @@ function handleTray() {
       // Create tray menu items
       tray.setContextMenu(trayContextMenu)
       tray.on('click', () => {
-        if (mainWindow.isVisible()) {
-          mainWindow.focus();
-        } else {
+        if (isLinux) {
           mainWindow.show();
+        } else {
+          showFromTray();
         }
-      });
-      tray.on('double-click', () => {
-        mainWindow.restore();
+        electronLog.info('Restored from Tray');
       });
       electronLog.info('handleTray() succeeded');
     }
@@ -255,9 +317,20 @@ contextMenu({
   }]
 });
 
-// Full restart, quitting Electron. Triggered by developer menu and disabling acceleration
+// Full restart, quitting Electron.
 app.on('restart', () => {
   electronLog.warn('Restarting App...');
+
+  store.set('relaunch.windowDetails', {
+    position: mainWindow.getPosition(),
+    size: mainWindow.getSize()
+  });
+
+  // Close Window
+  mainWindow.removeListener('closed', mainWindowClosed);
+  mainWindow.close();
+  mainWindow = undefined;
+
   // Tell app we are going to relaunch
   app.relaunch();
   // Kill Electron to initiate the relaunch
@@ -281,13 +354,19 @@ app.on('restart-confirm', () => {
           if (result.response !== 0) { return; }
           // Testing.
           if (result.response === 0) {
-              //console.log('The "Yes" button was pressed (main process)');
-              //app.relaunch();
-              //app.quit();
               app.emit('restart');
           }
       })
 });
+
+// This method is called when the BrowserWindow's DOM is ready
+// it is used to inject the index.js into the webpage.
+function browserWindowDomReady() {
+  // TODO: This is a temp fix and a proper fix should be developed
+  if (mainWindow !== null) {
+    mainWindow.webContents.executeJavaScript(headerScript);
+  }
+}
 
 // Run when window is closed. This cleans up the mainWindow object to save resources.
 function mainWindowClosed() {
@@ -310,6 +389,36 @@ app.on('activate', () => {
   }
 });
 
+// Append some Chromium command-line switches for GPU acceleration and other features
+app.commandLine.appendSwitch('enable-local-file-accesses');
+app.commandLine.appendSwitch('enable-quic');
+app.commandLine.appendSwitch('enable-ui-devtools');
+app.commandLine.appendSwitch('ignore-gpu-blocklist');
+app.commandLine.appendSwitch('enable-gpu-rasterization');
+app.commandLine.appendSwitch('enable-features','CSSColorSchemeUARendering,ImpulseScrollAnimations,ParallelDownloading,Portals,StorageBuckets,JXL');
+
+// I'm a Log freak, can you tell?
+function logAppInfo () {
+  electronLog.info('App Version: ' + [ appVersion ]);
+  electronLog.info('Electron Version: ' + [ electronVersion ]);
+  electronLog.info('Chromium Version: ' + [ chromeVersion ]);
+  electronLog.info('NodeJS Version: ' + [ nodeVersion ]);
+  electronLog.info('V8 Version: ' + [ v8Version ]);
+  electronLog.info('User Data Dir: ' + userDataDir);
+}
+
+// Called on disallowed remote APIs below
+function rejectEvent(event) {
+  event.preventDefault();
+}
+
+/* Restrict certain Electron APIs in the renderer process for security */
+app.on('remote-require', rejectEvent);
+app.on('remote-get-current-window', rejectEvent);
+app.on('remote-get-current-web-contents', rejectEvent);
+app.on('remote-get-guest-web-contents', rejectEvent);
+
+// Fire it up
 app.whenReady().then(async () => {
   if (argsCmd.includes('--cdm-info')) {
     await components.whenReady();
@@ -322,25 +431,8 @@ app.whenReady().then(async () => {
     electronLog.info('Welcome to Apple Music Desktop!');
     electronLog.info('WidevineCDM component ready.');
     logAppInfo();
-    createWindow();
     handleTray();
+    createWindow();
+    store.set('version', appVersion);
   }
 });
-
-function logAppInfo () {
-  electronLog.info('App Version: ' + [ appVersion ]);
-  electronLog.info('Electron Version: ' + [ electronVersion ]);
-  electronLog.info('Chromium Version: ' + [ chromeVersion ]);
-  electronLog.info('NodeJS Version: ' + [ nodeVersion ]);
-  electronLog.info('V8 Version: ' + [ v8Version ]);
-  electronLog.info('User Data Dir: ' + userDataDir);
-}
-
-// app.commandLine.appendSwitch('enable-experimental-web-platform-features');
-app.commandLine.appendSwitch('allow-file-access-from-files');
-app.commandLine.appendSwitch('enable-local-file-accesses');
-app.commandLine.appendSwitch('enable-quic');
-app.commandLine.appendSwitch('enable-ui-devtools');
-app.commandLine.appendSwitch('ignore-gpu-blocklist');
-app.commandLine.appendSwitch('enable-gpu-rasterization');
-app.commandLine.appendSwitch('enable-features','CSSColorSchemeUARendering,ImpulseScrollAnimations,ParallelDownloading,Portals,StorageBuckets,JXL');
