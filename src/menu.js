@@ -102,10 +102,6 @@ module.exports = (app, store, mainWindow) => {
             store.set('options.useLightMode', true);
           }
           app.emit('restart-confirm');
-          store.set('relaunch.windowDetails', {
-            position: mainWindow.getPosition(),
-            size: mainWindow.getSize()
-          });
         },
         checked: false
       },
@@ -143,10 +139,6 @@ module.exports = (app, store, mainWindow) => {
           } else {
             store.set('options.disableTray', true);
           }
-          store.set('relaunch.windowDetails', {
-            position: mainWindow.getPosition(),
-            size: mainWindow.getSize()
-          });
           app.emit('restart-confirm');
         },
         checked: false

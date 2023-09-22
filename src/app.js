@@ -78,17 +78,12 @@ async function createWindow () {
   let windowDetails = store.get('options.windowDetails');
   let relaunchWindowDetails = store.get('relaunch.windowDetails');
   if (relaunchWindowDetails) {
-    mainWindow.setSize(
-      relaunchWindowDetails.size[0],
-      relaunchWindowDetails.size[1]
-    );
     mainWindow.setPosition(
       relaunchWindowDetails.position[0],
       relaunchWindowDetails.position[1]
     );
     store.delete('relaunch.windowDetails');
   } else if (windowDetails) {
-    mainWindow.setSize(windowDetails.size[0], windowDetails.size[1]);
     mainWindow.setPosition(
       windowDetails.position[0],
       windowDetails.position[1]
@@ -103,7 +98,7 @@ async function createWindow () {
 
   // Load the index.html or webpage of the app.
   mainWindow.loadURL(mainURL);
-  mainWindow.on('page-title-updateds', function(e) {
+  mainWindow.on('page-title-updated', function(e) {
     e.preventDefault()
   });
   if (mainURL == 'https://beta.music.apple.com/') {
@@ -116,8 +111,7 @@ async function createWindow () {
     if (store.get('options.windowDetails')) {
       if (mainWindow) {
         store.set('options.windowDetails', {
-          position: mainWindow.getPosition(),
-          size: mainWindow.getSize()
+          position: mainWindow.getPosition()
         });
         electronLog.error('Saved windowDetails.');
       } else {
@@ -322,8 +316,7 @@ app.on('restart', () => {
   electronLog.warn('Restarting App...');
 
   store.set('relaunch.windowDetails', {
-    position: mainWindow.getPosition(),
-    size: mainWindow.getSize()
+    position: mainWindow.getPosition()
   });
 
   // Close Window
