@@ -14,4 +14,4 @@ python3 -m castlabs_evs.vmp sign-pkg dist\mac-arm64
 
 ## For codesigning on MacOS
 
-codesign --sign - --force --deep dist/mac/Quark\ Player.app && codesign --sign - --force --deep dist/mac-arm64/Quark\ Player.app
+codesign --sign - --force --deep dist/mac/Apple\ Music.app && codesign --sign - --force --deep dist/mac-arm64/Apple\ Music.app
