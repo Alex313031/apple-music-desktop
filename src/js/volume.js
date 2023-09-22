@@ -1,8 +1,11 @@
-// Reduce video volume
-
+/* Reduce video volume */
 function reduceVolume () {
-  var vid = document.getElementById("vid1");
-  vid.volume = 0.20;
+  const elements = document.getElementsByTagName("video");
+  while(elements.length > 0){
+    elements[0].volume = 0.20;
+  }
 }
 
 reduceVolume();
+
+console.log('Electron Status: Reduced Video Volume');

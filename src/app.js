@@ -1,24 +1,24 @@
-const { app, BrowserWindow, components, dialog, Menu, nativeTheme, shell, Tray } = require('electron');
+const { app, BrowserWindow, components, dialog, Menu, nativeTheme, Tray } = require('electron');
 const electronLog = require('electron-log');
 const contextMenu = require('electron-context-menu');
 const Store = require('electron-store');
 const path = require('path');
 const fs = require('fs');
-const url = require('url');
 const appName = app.getName();
 const userDataDir = app.getPath('userData');
-const userLogFile = path.join(userDataDir, 'logs/main.log');
-const userConfigJson = path.join(userDataDir, 'config.json');
-
-// Load in the header script for modifying DOM
-const headerScript = fs.readFileSync(
-  path.join(__dirname, 'js/index.js'),
-  'utf8'
-);
 
 // Initialize Electron remote module
 require('@electron/remote/main').initialize();
 
+// Load in the header scripts for modifying DOM
+const injectScript = fs.readFileSync(
+  path.join(__dirname, 'js/index.js'),
+  'utf8'
+);
+const volumeScript = fs.readFileSync(
+  path.join(__dirname, 'js/volume.js'),
+  'utf8'
+);
 // Get app version from package.json
 var appVersion = app.getVersion();
 // Get Electron versions
@@ -56,6 +56,8 @@ async function createWindow () {
     useContentSize: true,
     icon: isWin ? path.join(__dirname, 'imgs/icon.ico') : path.join(__dirname, 'imgs/icon64.png'),
     darkTheme: store.get('options.useLightMode') ? false : true,
+    vibrancy: store.get('options.useLightMode') ? 'light' : 'ultra-dark',
+    frame: isMac ? true : true,
     webPreferences: {
       nodeIntegration: false,
       nodeIntegrationInWorker: false,
@@ -72,7 +74,7 @@ async function createWindow () {
     }
   });
   require("@electron/remote/main").enable(mainWindow.webContents);
-  Menu.setApplicationMenu(mainMenu(app, store, mainWindow));
+  Menu.setApplicationMenu(mainMenu(app, store));
 
   // Reset the Window's size and location
   let windowDetails = store.get('options.windowDetails');
@@ -134,6 +136,7 @@ async function createWindow () {
 }
 
 app.on('change-site', () => {
+  let logMessage;
   if (store.get('options.useBetaSite')) {
     mainURL = 'https://beta.music.apple.com/';
     logMessage = 'Note: Switching to Beta site';
@@ -254,11 +257,11 @@ contextMenu({
   showInspectElement: true,
   showLookUpSelection: true,
   showSearchWithGoogle: true,
-  prepend: (defaultActions, parameters, browserWindow) => [
+  prepend: (defaultActions, parameters) => [
   { label: 'Open Video in New Window',
     // Only show it when right-clicking text
     visible: parameters.mediaType === 'video',
-    click: (srcURL) => {
+    click: () => {
       const vidURL = parameters.srcURL;
       let vidTitle;
       vidTitle = vidURL.substring(vidURL.lastIndexOf('/') + 1);
@@ -285,7 +288,7 @@ contextMenu({
   { label: 'Open Link in New Window',
     // Only show it when right-clicking a link
     visible: parameters.linkURL.trim().length > 0,
-    click: (linkURL) => {
+    click: () => {
       const newWin = new BrowserWindow({
         title: 'New Window',
         width: 1024,
@@ -357,7 +360,8 @@ app.on('restart-confirm', () => {
 function browserWindowDomReady() {
   // TODO: This is a temp fix and a proper fix should be developed
   if (mainWindow !== null) {
-    mainWindow.webContents.executeJavaScript(headerScript);
+    mainWindow.webContents.executeJavaScript(injectScript);
+    mainWindow.webContents.executeJavaScript(volumeScript);
   }
 }
 

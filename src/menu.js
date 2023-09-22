@@ -1,29 +1,17 @@
-const { app, BrowserWindow, components, dialog, Menu, nativeTheme, shell, Tray } = require('electron');
+const { app, BrowserWindow, Menu, nativeTheme, shell } = require('electron');
 const electronLog = require('electron-log');
-const contextMenu = require('electron-context-menu');
-const Store = require('electron-store');
 const path = require('path');
-const fs = require('fs');
-const url = require('url');
 const appName = app.getName();
 const userDataDir = app.getPath('userData');
 const userLogFile = path.join(userDataDir, 'logs/main.log');
 const userConfigJson = path.join(userDataDir, 'config.json');
-
-// Get app version from package.json
-var appVersion = app.getVersion();
-// Get Electron versions
-var electronVersion = process.versions.electron;
-var chromeVersion = process.versions.chrome;
-var nodeVersion = process.versions.node;
-var v8Version = process.versions.v8;
 
 // Globally export what OS we are on
 const isLinux = process.platform === 'linux';
 const isWin = process.platform === 'win32';
 const isMac = process.platform === 'darwin';
 
-module.exports = (app, store, mainWindow) => {
+module.exports = (app, store) => {
   return Menu.buildFromTemplate([
   {
     role: 'fileMenu',
@@ -52,7 +40,7 @@ module.exports = (app, store, mainWindow) => {
         visible: store.get('options.disableTray') ? false : true,
         accelerator: 'CmdorCtrl+M',
         acceleratorWorksWhenHidden: false,
-        click(item, focusedWindow) {
+        click() {
           app.emit('minimize-to-tray');
         }
       },
@@ -95,7 +83,7 @@ module.exports = (app, store, mainWindow) => {
         label: store.get('options.useLightMode') ? 'Use Dark Mode' : 'Use Light Mode',
         type: 'checkbox',
         accelerator: 'CmdorCtrl+Shift+D',
-        click(e) {
+        click() {
           if (store.get('options.useLightMode')) {
             store.set('options.useLightMode', false);
           } else {
@@ -108,7 +96,7 @@ module.exports = (app, store, mainWindow) => {
       {
         label: 'Use Beta Site',
         type: 'checkbox',
-        click(e) {
+        click() {
           if (store.get('options.useBetaSite')) {
             store.set('options.useBetaSite', false);
           } else {
@@ -133,7 +121,7 @@ module.exports = (app, store, mainWindow) => {
       {
         label: store.get('options.disableTray') ? 'Enable Tray' : 'Disable Tray',
         type: 'checkbox',
-        click(e) {
+        click() {
           if (store.get('options.disableTray')) {
             store.set('options.disableTray', false);
           } else {
@@ -148,6 +136,11 @@ module.exports = (app, store, mainWindow) => {
         click() {
           store.openInEditor();
           electronLog.info('Editing Config File');
+          if (isLinux) {
+            return;
+          } else {
+            console.log('\n Note that JSON must be a recognized file type \n for the OS to open the config.json file.\n');
+          }
         }
       }
     ]
