@@ -115,7 +115,7 @@ async function createWindow () {
         store.set('options.windowDetails', {
           position: mainWindow.getPosition()
         });
-        electronLog.error('Saved windowDetails.');
+        electronLog.info('Saved windowDetails.');
       } else {
         electronLog.error('Error: mainWindow was not defined while trying to save windowDetails.');
         return;
