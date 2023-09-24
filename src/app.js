@@ -36,7 +36,7 @@ let mainWindow; // Global Windows object
 let mainActivated; // Global activate? object
 let mainURL; // Global URL destination object
 const argsCmd = process.argv; // Global cmdline object.
-const mainMenu = require('./menu'); // menu.js
+const mainMenu = require('./menu.js'); // For making native menu
 // Create config.json
 const store = new Store();
 

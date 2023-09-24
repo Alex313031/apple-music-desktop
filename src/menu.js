@@ -155,10 +155,10 @@ module.exports = (app, store) => {
       { role: 'cut' },
       { role: 'copy' },
       { role: 'paste' },
-      { role: 'pasteandmatchstyle' },
+      { role: 'pasteAndMatchStyle' },
       { role: 'delete' },
       { type: 'separator' },
-      { role: 'selectall' }
+      { role: 'selectAll' }
     ]
   },
   {
