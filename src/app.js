@@ -1,4 +1,4 @@
-const { app, BrowserWindow, components, dialog, ipcMain, ipcRenderer, Menu, nativeTheme, Tray } = require('electron');
+const { app, BrowserWindow, components, dialog, ipcMain, Menu, nativeTheme, Tray } = require('electron');
 const electronLog = require('electron-log');
 const contextMenu = require('electron-context-menu');
 const Store = require('electron-store');
@@ -10,9 +10,6 @@ const mainLogger = require('./logger.js'); // Misc. logging
 // Create config.json
 const store = new Store();
 const appName = app.getName();
-const userDataDir = app.getPath('userData');
-const userLogFile = path.join(userDataDir, 'logs/main.log');
-const userOldLogFile = path.join(userDataDir, 'logs/main.log.old');
 
 // Initialize Electron remote module
 require('@electron/remote/main').initialize();
@@ -20,9 +17,10 @@ require('@electron/remote/main').initialize();
 electronLog.transports.file.maxSize = 1024 * 100;
 
 // Load in the header scripts for modifying DOM
-const injectScript = fs.readFileSync(path.join(__dirname, 'js/index.js'), 'utf8');
-const volumeScript = fs.readFileSync(path.join(__dirname, 'js/volume.js'), 'utf8');
-const musicKitInit = fs.readFileSync(path.join(__dirname, 'js/musickit.js'), 'utf8');
+const injectScript = fs.readFileSync(path.join(__dirname, 'renderer/index.js'), 'utf8');
+const volumeScript = fs.readFileSync(path.join(__dirname, 'renderer/volume.js'), 'utf8');
+const musicKitInit = fs.readFileSync(path.join(__dirname, 'renderer/musickit.js'), 'utf8');
+const trackInfoScript = fs.readFileSync(path.join(__dirname, 'preload/info.js'), 'utf8');
 // Get app version from package.json
 var appVersion = app.getVersion();
 
@@ -153,6 +151,7 @@ async function createWindow () {
     }
     pauseTrack();
     electronLog.info('mainWindow.close()');
+    mainWindow.destroy();
   });
 
   // Emitted when the window is closed.
@@ -177,6 +176,7 @@ app.on('change-site', () => {
       mainURL = 'https://beta.music.apple.com/';
       windowTitle = appName;
     }
+    logMessage = 'Note: Switching to Beta site';
   } else {
     if (store.get('options.useBrowse')) {
       mainURL = 'https://music.apple.com/us/browse';
@@ -191,8 +191,12 @@ app.on('change-site', () => {
       mainURL = 'https://music.apple.com/';
       windowTitle = appName;
     }
+    logMessage = undefined;
   }
   electronLog.info('Switching to ' + mainURL);
+  if (store.get('options.useBetaSite')) {
+    electronLog.warn(logMessage);
+  }
   mainWindow.loadURL(mainURL);
   mainWindow.setTitle(windowTitle);
   mainWindow.on('page-title-updated', function(e) {
@@ -210,21 +214,30 @@ app.on('change-site', () => {
   });
 });
 
+function showFromTray () {
+  if (isLinux) {
+    mainWindow.show();
+  } else {
+    if (mainWindow.isVisible()) {
+      mainWindow.focus();
+    } else {
+      mainWindow.show();
+    }
+  }
+  electronLog.info('Restored from Tray');
+}
+
 function minimizeToTray () {
   mainWindow.hide();
   electronLog.info('Minimized to Tray');
 }
 
-function showFromTray () {
-  if (mainWindow.isVisible()) {
-    mainWindow.focus();
-  } else {
-    mainWindow.show();
-  }
-}
-
 app.on('minimize-to-tray', () => {
   minimizeToTray();
+});
+
+app.on('show-from-tray', () => {
+  showFromTray();
 });
 
 function handleTray() {
@@ -232,73 +245,21 @@ function handleTray() {
     if (store.get('options.disableTray')) {
       return;
     } else {
-      var needsFixing = (isLinux);
-      const trayContextMenu = Menu.buildFromTemplate([
-        { label: 'Play/Pause',
-          click: function () {
-            app.emit('play-pause');
-          }
-        },
-        { label: 'Next Track',
-          click: function () {
-            app.emit('next-track');
-          }
-        },
-        { label: 'Previous Track',
-          click: function () {
-            app.emit('previous-track');
-          }
-        },
-        { label: 'Get Info',
-          click: function () {
-            app.emit('get-track-info');
-          }
-        },
-        { type: 'separator' },
-        { label: 'Minimize to Tray',
-          click: function () {
-            minimizeToTray();
-          }
-        },
-        { label: 'Show',
-          visible: needsFixing,
-          click: function () {
-            mainWindow.show();
-            electronLog.info('Restored from Tray');
-          }
-        },
-        { label: 'Quit',
-          role: 'quit',
-          click: function () {
-            app.quit();
-          }
-        }
-      ]);
-
+      const trayContextMenu = require('./tray.js')
       // Set the tray icon and name
       const trayIcon = isWin ? path.join(__dirname, 'imgs/icon.ico') : path.join(__dirname, 'imgs/icon48.png'),
       tray = new Tray(trayIcon);
       tray.setToolTip(appName);
       // Create tray menu items
-      tray.setContextMenu(trayContextMenu)
+      tray.setContextMenu(trayContextMenu(app))
       tray.on('click', () => {
-        if (isLinux) {
-          mainWindow.show();
-        } else {
-          showFromTray();
-        }
-        electronLog.info('Restored from Tray');
+        tray.popUpContextMenu();
       });
-      electronLog.info('handleTray() succeeded');
     }
   } catch (error) {
     electronLog.error('handleTray() failed: ' + error);
   }
 }
-
-app.on('handle-tray', () => {
-  handleTray();
-});
 
 function createPopOutWindow() {
   const popoutWindow = new BrowserWindow({
@@ -440,6 +401,38 @@ ipcMain.handle('finished-preload', () => {
 
 ipcMain.on('track-name', (event, trackName) => {
   electronLog.info('Now Playing: ' + trackName)
+  function createTrackWindow () {
+    const trackWindow = new BrowserWindow({
+      width: 400,
+      height: 400,
+      useContentSize: true,
+      title: "Current Track Info",
+      icon: isWin ? path.join(__dirname, 'imgs/icon.ico') : path.join(__dirname, 'imgs/icon64.png'),
+      darkTheme: store.get('options.useLightMode') ? false : true,
+      webPreferences: {
+        nodeIntegration: false,
+        nodeIntegrationInWorker: false,
+        contextIsolation: false,
+        sandbox: false,
+        experimentalFeatures: true,
+        webviewTag: true,
+        devTools: true,
+        javascript: true,
+        plugins: true,
+        enableRemoteModule: true,
+        preload: path.join(__dirname, 'preload/info.js')
+      },
+    });
+    require("@electron/remote/main").enable(trackWindow.webContents);
+    if (store.get('options.useLightMode')) {
+      nativeTheme.themeSource = 'light';
+    } else {
+      nativeTheme.themeSource = 'dark';
+    }
+    trackWindow.loadFile('./index.html');
+    trackWindow.webContents.executeJavaScript(trackInfoScript);
+  }
+  createTrackWindow();
 });
 
 // This method is called when the BrowserWindow's DOM is ready
@@ -493,7 +486,7 @@ app.on('before-quit', () => {
 });
 
 app.on('quit', () => {
-  app.exit();
+  electronLog.warn('Apple Music is quitting now');
   app.quit();
 });
 

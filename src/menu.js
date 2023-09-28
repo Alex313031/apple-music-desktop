@@ -304,7 +304,7 @@ module.exports = (app, mainWindow, store) => {
         accelerator: 'Ctrl+Shift+F12',
         visible: false,
         acceleratorWorksWhenHidden: true,
-        click(item, focusedWindow) {
+        click() {
           electronLog.info('Opening Electron DevTools on mainWindow.');
           mainWindow.openDevTools({ mode: 'detach' });
         }

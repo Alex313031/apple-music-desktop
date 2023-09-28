@@ -38,7 +38,9 @@ function getInfo () {
       /* Print currently playing Song to the terminal */
       ipcRenderer.send('track-name', trackName);
     } catch {
+      let trackName = 'null';
       console.log('Track is not playing');
+      ipcRenderer.send('track-name', trackName);
     }`
   
 }

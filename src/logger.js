@@ -1,4 +1,4 @@
-const { app, BrowserWindow, Menu, nativeTheme, shell } = require('electron');
+const { app } = require('electron');
 const electronLog = require('electron-log');
 const fs = require('fs');
 const path = require('path');
@@ -23,7 +23,6 @@ module.exports.startLogging = (store) => {
   }
 
   if (disableLogging == true) {
-    return 0;
     electronLog.warn('Note: Logging is disabled');
   } else {
     // I'm a Log freak, can you tell?
