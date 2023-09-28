@@ -11,7 +11,7 @@ const isLinux = process.platform === 'linux';
 const isWin = process.platform === 'win32';
 const isMac = process.platform === 'darwin';
 
-module.exports = (app, store) => {
+module.exports = (app, mainWindow, store) => {
   return Menu.buildFromTemplate([
   {
     role: 'fileMenu',
@@ -98,13 +98,65 @@ module.exports = (app, store) => {
         type: 'checkbox',
         click() {
           if (store.get('options.useBetaSite')) {
+            electronLog.warn('Note: Switching to regular site');
             store.set('options.useBetaSite', false);
           } else {
+            electronLog.warn('Note: Switching to beta site');
             store.set('options.useBetaSite', true);
           }
           app.emit('change-site');
         },
         checked: store.get('options.useBetaSite')
+      },
+      {
+        label: 'Start Tab',
+        submenu: [
+          {
+            label: 'Browse',
+            type: 'checkbox',
+            click() {
+              if (store.get('options.useBrowse')) {
+                store.set('options.useBrowse', false);
+              } else {
+                store.set('options.useBrowse', true);
+                store.set('options.useRecent', false);
+                store.set('options.useArtists', false);
+              }
+              app.emit('change-site');
+            },
+            checked: store.get('options.useBrowse')
+          },
+          {
+            label: 'Recently Added',
+            type: 'checkbox',
+            click() {
+              if (store.get('options.useRecent')) {
+                store.set('options.useRecent', false);
+              } else {
+                store.set('options.useRecent', true);
+                store.set('options.useBrowse', false);
+                store.set('options.useArtists', false);
+              }
+              app.emit('change-site');
+            },
+            checked: store.get('options.useRecent')
+          },
+          {
+            label: 'Artists',
+            type: 'checkbox',
+            click() {
+              if (store.get('options.useArtists')) {
+                store.set('options.useArtists', false);
+              } else {
+                store.set('options.useArtists', true);
+                store.set('options.useBrowse', false);
+                store.set('options.useRecent', false);
+              }
+              app.emit('change-site');
+            },
+            checked: store.get('options.useArtists')
+          }
+        ]
       },
       {
         label: 'Remember Window Position',
@@ -126,6 +178,19 @@ module.exports = (app, store) => {
             store.set('options.disableTray', false);
           } else {
             store.set('options.disableTray', true);
+          }
+          app.emit('restart-confirm');
+        },
+        checked: false
+      },
+      {
+        label: store.get('options.disableLogging') ? 'Enable Logging' : 'Disable Logging',
+        type: 'checkbox',
+        click() {
+          if (store.get('options.disableLogging')) {
+            store.set('options.disableLogging', false);
+          } else {
+            store.set('options.disableLogging', true);
           }
           app.emit('restart-confirm');
         },
@@ -241,8 +306,21 @@ module.exports = (app, store) => {
         acceleratorWorksWhenHidden: true,
         click(item, focusedWindow) {
           electronLog.info('Opening Electron DevTools on mainWindow.');
-          focusedWindow.openDevTools({ mode: 'detach' });
+          mainWindow.openDevTools({ mode: 'detach' });
         }
+      },
+      {
+        label: store.get('options.devToolsOnStart') ? 'Disable DevTools on Start' : 'Enable DevTools on Start',
+        type: 'checkbox',
+        click() {
+          if (store.get('options.devToolsOnStart')) {
+            store.set('options.devToolsOnStart', false);
+          } else {
+            store.set('options.devToolsOnStart', true);
+          }
+          app.emit('restart-confirm');
+        },
+        checked: false
       },
       {
         label: 'Open chrome://gpu',
@@ -324,7 +402,7 @@ module.exports = (app, store) => {
               javascript: true,
               plugins: true,
               enableRemoteModule: true,
-              preload: path.join(__dirname, 'preload.js')
+              preload: path.join(__dirname, 'preload/preload.js')
             },
           });
           require("@electron/remote/main").enable(aboutWindow.webContents);

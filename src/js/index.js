@@ -12,4 +12,4 @@ function removeElementsByClass(className) {
 
 removeElementsByClass();
 
-console.log('Electron Status: Injected index.js Script');
+console.log('electron.renderer: Injected index.js script');

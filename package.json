@@ -3,7 +3,7 @@
   "appName": "Apple Music",
   "productName": "Apple Music",
   "applicationId": "com.alex313031.apple-music-desktop",
-  "version": "0.1.4",
+  "version": "2.0.0",
   "description": "An Electron app that provides a native Apple Music experience for Linux & Windows.",
   "author": "Alex313031",
   "license": "BSD-3-Clause",
@@ -29,7 +29,7 @@
     "stylelint": "stylelint \"src/**/*.css*\"",
     "start": "electron ./src",
     "winstart": "electron src",
-    "dev": "electron --enable-logging=file --user-data-dir=./test ./src",
+    "dev": "NODE_ENV=development electron --enable-logging=file --user-data-dir=./test ./src",
     "postinstall": "electron-builder install-app-deps"
   },
   "dependencies": {

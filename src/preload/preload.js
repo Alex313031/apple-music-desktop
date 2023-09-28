@@ -22,3 +22,5 @@ window.addEventListener('DOMContentLoaded', () => {
   }
   replaceText(`yiff-version`, appVersion)
 });
+
+console.log('electron.renderer: Electron versions exported');

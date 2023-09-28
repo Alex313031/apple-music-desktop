@@ -1,31 +1,32 @@
-const { app, BrowserWindow, components, dialog, Menu, nativeTheme, Tray } = require('electron');
+const { app, BrowserWindow, components, dialog, ipcMain, ipcRenderer, Menu, nativeTheme, Tray } = require('electron');
 const electronLog = require('electron-log');
 const contextMenu = require('electron-context-menu');
 const Store = require('electron-store');
-const path = require('path');
+const audioControlJS = require('./audiocontrol.js');
 const fs = require('fs');
+const path = require('path');
+const mainMenu = require('./menu.js'); // For making native menu
+const mainLogger = require('./logger.js'); // Misc. logging
+// Create config.json
+const store = new Store();
 const appName = app.getName();
 const userDataDir = app.getPath('userData');
+const userLogFile = path.join(userDataDir, 'logs/main.log');
+const userOldLogFile = path.join(userDataDir, 'logs/main.log.old');
 
 // Initialize Electron remote module
 require('@electron/remote/main').initialize();
+// Restrict main.log size to 100Kb
+electronLog.transports.file.maxSize = 1024 * 100;
 
 // Load in the header scripts for modifying DOM
-const injectScript = fs.readFileSync(
-  path.join(__dirname, 'js/index.js'),
-  'utf8'
-);
-const volumeScript = fs.readFileSync(
-  path.join(__dirname, 'js/volume.js'),
-  'utf8'
-);
+const injectScript = fs.readFileSync(path.join(__dirname, 'js/index.js'), 'utf8');
+const volumeScript = fs.readFileSync(path.join(__dirname, 'js/volume.js'), 'utf8');
+const musicKitInit = fs.readFileSync(path.join(__dirname, 'js/musickit.js'), 'utf8');
 // Get app version from package.json
 var appVersion = app.getVersion();
-// Get Electron versions
-var electronVersion = process.versions.electron;
-var chromeVersion = process.versions.chrome;
-var nodeVersion = process.versions.node;
-var v8Version = process.versions.v8;
+
+mainLogger.handleLogging(store);
 
 // Globally export what OS we are on
 const isLinux = process.platform === 'linux';
@@ -35,20 +36,42 @@ const isMac = process.platform === 'darwin';
 let mainWindow; // Global Windows object
 let mainActivated; // Global activate? object
 let mainURL; // Global URL destination object
+let windowTitle; // Global Window title object
 const argsCmd = process.argv; // Global cmdline object.
-const mainMenu = require('./menu.js'); // For making native menu
-// Create config.json
-const store = new Store();
 
 if (store.get('options.useBetaSite')) {
-  mainURL = 'https://beta.music.apple.com/';
+  if (store.get('options.useBrowse')) {
+    mainURL = 'https://beta.music.apple.com/us/browse';
+    windowTitle = appName + ' - Browse';
+  } else if (store.get('options.useRecent')) {
+    mainURL = 'https://beta.music.apple.com/us/library/recently-added';
+    windowTitle = appName + ' - Recently Added';
+  } else if (store.get('options.useArtists')) {
+    mainURL = 'https://beta.music.apple.com/us/library/artists';
+    windowTitle = appName + ' - Artists';
+  } else {
+    mainURL = 'https://beta.music.apple.com/';
+    windowTitle = appName;
+  }
 } else {
-  mainURL = 'https://music.apple.com/';
+  if (store.get('options.useBrowse')) {
+    mainURL = 'https://music.apple.com/us/browse';
+    windowTitle = appName + ' - Browse';
+  } else if (store.get('options.useRecent')) {
+    mainURL = 'https://music.apple.com/us/library/recently-added';
+    windowTitle = appName + ' - Recently Added';
+  } else if (store.get('options.useArtists')) {
+    mainURL = 'https://music.apple.com/us/library/artists';
+    windowTitle = appName + ' - Artists';
+  } else {
+    mainURL = 'https://music.apple.com/';
+    windowTitle = appName;
+  }
 }
 
 async function createWindow () {
   mainWindow = new BrowserWindow({
-    title: appName,
+    title: windowTitle,
     resizable: true,
     maximizable: true,
     width: 1024,
@@ -69,12 +92,11 @@ async function createWindow () {
       javascript: true,
       plugins: true,
       enableRemoteModule: true,
-      // Preload before renderer processes
-      preload: path.join(__dirname, 'preload.js')
+      preload: path.join(__dirname, 'preload/client-preload.js')
     }
   });
   require("@electron/remote/main").enable(mainWindow.webContents);
-  Menu.setApplicationMenu(mainMenu(app, store));
+  Menu.setApplicationMenu(mainMenu(app, mainWindow, store));
 
   // Reset the Window's size and location
   let windowDetails = store.get('options.windowDetails');
@@ -103,6 +125,15 @@ async function createWindow () {
   mainWindow.on('page-title-updated', function(e) {
     e.preventDefault()
   });
+  // Inject Header scripts on page load
+  mainWindow.webContents.on('did-stop-loading', () => {
+    mainWindow.webContents.executeJavaScript(injectScript);
+    mainWindow.webContents.executeJavaScript(volumeScript);
+    mainWindow.webContents.executeJavaScript(musicKitInit);
+  });
+  mainWindow.webContents.on('did-finish-load', () => {
+    browserDomReady();
+  });
   if (mainURL == 'https://beta.music.apple.com/') {
     electronLog.warn('Note: Using Beta site');
   }
@@ -118,15 +149,10 @@ async function createWindow () {
         electronLog.info('Saved windowDetails.');
       } else {
         electronLog.error('Error: mainWindow was not defined while trying to save windowDetails.');
-        return;
       }
     }
+    pauseTrack();
     electronLog.info('mainWindow.close()');
-  });
-
-  // Inject Header Script on Page Load
-  mainWindow.webContents.on('did-finish-load', () => {
-    browserWindowDomReady();
   });
 
   // Emitted when the window is closed.
@@ -138,17 +164,50 @@ async function createWindow () {
 app.on('change-site', () => {
   let logMessage;
   if (store.get('options.useBetaSite')) {
-    mainURL = 'https://beta.music.apple.com/';
-    logMessage = 'Note: Switching to Beta site';
+    if (store.get('options.useBrowse')) {
+      mainURL = 'https://beta.music.apple.com/us/browse';
+      windowTitle = appName + ' - Browse';
+    } else if (store.get('options.useRecent')) {
+      mainURL = 'https://beta.music.apple.com/us/library/recently-added';
+      windowTitle = appName + ' - Recently Added';
+    } else if (store.get('options.useArtists')) {
+      mainURL = 'https://beta.music.apple.com/us/library/artists';
+      windowTitle = appName + ' - Artists';
+    } else {
+      mainURL = 'https://beta.music.apple.com/';
+      windowTitle = appName;
+    }
   } else {
-    mainURL = 'https://music.apple.com/';
-    logMessage = 'Note: Switching to regular site';
+    if (store.get('options.useBrowse')) {
+      mainURL = 'https://music.apple.com/us/browse';
+      windowTitle = appName + ' - Browse';
+    } else if (store.get('options.useRecent')) {
+      mainURL = 'https://music.apple.com/us/library/recently-added';
+      windowTitle = appName + ' - Recently Added';
+    } else if (store.get('options.useArtists')) {
+      mainURL = 'https://music.apple.com/us/library/artists';
+      windowTitle = appName + ' - Artists';
+    } else {
+      mainURL = 'https://music.apple.com/';
+      windowTitle = appName;
+    }
   }
+  electronLog.info('Switching to ' + mainURL);
   mainWindow.loadURL(mainURL);
+  mainWindow.setTitle(windowTitle);
   mainWindow.on('page-title-updated', function(e) {
     e.preventDefault()
   });
-  electronLog.warn(logMessage);
+  mainWindow.webContents.on('did-stop-loading', () => {
+    mainWindow.webContents.executeJavaScript(injectScript);
+    mainWindow.webContents.executeJavaScript(volumeScript);
+    mainWindow.webContents.executeJavaScript(musicKitInit);
+  });
+  mainWindow.webContents.on('did-finish-load', () => {
+    mainWindow.webContents.executeJavaScript(injectScript);
+    mainWindow.webContents.executeJavaScript(volumeScript);
+    mainWindow.webContents.executeJavaScript(musicKitInit);
+  });
 });
 
 function minimizeToTray () {
@@ -175,6 +234,27 @@ function handleTray() {
     } else {
       var needsFixing = (isLinux);
       const trayContextMenu = Menu.buildFromTemplate([
+        { label: 'Play/Pause',
+          click: function () {
+            app.emit('play-pause');
+          }
+        },
+        { label: 'Next Track',
+          click: function () {
+            app.emit('next-track');
+          }
+        },
+        { label: 'Previous Track',
+          click: function () {
+            app.emit('previous-track');
+          }
+        },
+        { label: 'Get Info',
+          click: function () {
+            app.emit('get-track-info');
+          }
+        },
+        { type: 'separator' },
         { label: 'Minimize to Tray',
           click: function () {
             minimizeToTray();
@@ -188,6 +268,7 @@ function handleTray() {
           }
         },
         { label: 'Quit',
+          role: 'quit',
           click: function () {
             app.quit();
           }
@@ -195,7 +276,7 @@ function handleTray() {
       ]);
 
       // Set the tray icon and name
-      const trayIcon = isWin ? path.join(__dirname, 'imgs/icon.ico') : path.join(__dirname, 'imgs/icon64.png'),
+      const trayIcon = isWin ? path.join(__dirname, 'imgs/icon.ico') : path.join(__dirname, 'imgs/icon48.png'),
       tray = new Tray(trayIcon);
       tray.setToolTip(appName);
       // Create tray menu items
@@ -324,8 +405,6 @@ app.on('restart', () => {
 
   // Close Window
   mainWindow.removeListener('closed', mainWindowClosed);
-  mainWindow.close();
-  mainWindow = undefined;
 
   // Tell app we are going to relaunch
   app.relaunch();
@@ -355,15 +434,47 @@ app.on('restart-confirm', () => {
       })
 });
 
+ipcMain.handle('finished-preload', () => {
+  electronLog.info('[ electron:preload ] IPC Listeners Created');
+});
+
+ipcMain.on('track-name', (event, trackName) => {
+  electronLog.info('Now Playing: ' + trackName)
+});
+
 // This method is called when the BrowserWindow's DOM is ready
 // it is used to inject the index.js into the webpage.
-function browserWindowDomReady() {
+function browserDomReady() {
   // TODO: This is a temp fix and a proper fix should be developed
   if (mainWindow !== null) {
     mainWindow.webContents.executeJavaScript(injectScript);
     mainWindow.webContents.executeJavaScript(volumeScript);
+    mainWindow.webContents.executeJavaScript(musicKitInit);
+  }
+  if (store.get('options.devToolsOnStart')) {
+    mainWindow.openDevTools({ mode: 'detach' });
   }
 }
+
+function pauseTrack () {
+  mainWindow.webContents.executeJavaScript(audioControlJS.pause());
+}
+
+app.on('get-track-info', () => {
+  mainWindow.webContents.executeJavaScript(audioControlJS.getInfo());
+});
+
+app.on('play-pause', () => {
+  mainWindow.webContents.executeJavaScript(audioControlJS.playPause());
+});
+
+app.on('next-track', () => {
+  mainWindow.webContents.executeJavaScript(audioControlJS.nextTrack());
+});
+
+app.on('previous-track', () => {
+  mainWindow.webContents.executeJavaScript(audioControlJS.previousTrack());
+});
 
 // Run when window is closed. This cleans up the mainWindow object to save resources.
 function mainWindowClosed() {
@@ -375,6 +486,15 @@ app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {
     app.quit();
   }
+});
+
+app.on('before-quit', () => {
+  pauseTrack();
+});
+
+app.on('quit', () => {
+  app.exit();
+  app.quit();
 });
 
 // On macOS it's common to re-create a window in the app when the
@@ -393,15 +513,16 @@ app.commandLine.appendSwitch('enable-ui-devtools');
 app.commandLine.appendSwitch('ignore-gpu-blocklist');
 app.commandLine.appendSwitch('enable-gpu-rasterization');
 app.commandLine.appendSwitch('enable-features','CSSColorSchemeUARendering,ImpulseScrollAnimations,ParallelDownloading,Portals,StorageBuckets,JXL');
+// Enable remote debugging only if we in development mode
+if (process.env.NODE_ENV === 'development') {
+  const portNumber = '9222'
+  app.commandLine.appendSwitch('remote-debugging-port', portNumber);
+  electronLog.warn('Remote debugging open on port ' + [ portNumber ]);
+}
 
 // I'm a Log freak, can you tell?
 function logAppInfo () {
-  electronLog.info('App Version: ' + [ appVersion ]);
-  electronLog.info('Electron Version: ' + [ electronVersion ]);
-  electronLog.info('Chromium Version: ' + [ chromeVersion ]);
-  electronLog.info('NodeJS Version: ' + [ nodeVersion ]);
-  electronLog.info('V8 Version: ' + [ v8Version ]);
-  electronLog.info('User Data Dir: ' + userDataDir);
+  mainLogger.startLogging(store);
 }
 
 // Called on disallowed remote APIs below
@@ -431,5 +552,6 @@ app.whenReady().then(async () => {
     handleTray();
     createWindow();
     store.set('version', appVersion);
+    electronLog.info('mainURL is: ' + mainURL);
   }
 });
