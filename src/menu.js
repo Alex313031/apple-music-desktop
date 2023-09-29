@@ -1,4 +1,4 @@
-const { app, BrowserWindow, Menu, nativeTheme, shell } = require('electron');
+const { app, BrowserWindow, ipcMain, Menu, nativeTheme, shell } = require('electron');
 const electronLog = require('electron-log');
 const path = require('path');
 const appName = app.getName();
@@ -98,15 +98,26 @@ module.exports = (app, mainWindow, store) => {
         type: 'checkbox',
         click() {
           if (store.get('options.useBetaSite')) {
-            electronLog.warn('Note: Switching to regular site');
             store.set('options.useBetaSite', false);
           } else {
-            electronLog.warn('Note: Switching to beta site');
             store.set('options.useBetaSite', true);
           }
           app.emit('change-site');
         },
         checked: store.get('options.useBetaSite')
+      },
+      {
+        label: 'Toggle Mini Player',
+        type: 'checkbox',
+        click() {
+          if (store.get('options.useMiniPlayer')) {
+            store.set('options.useMiniPlayer', false);
+          } else {
+            store.set('options.useMiniPlayer', true);
+          }
+          ipcMain.emit('toggle-miniplayer');
+        },
+        checked: false
       },
       {
         label: 'Start Tab',

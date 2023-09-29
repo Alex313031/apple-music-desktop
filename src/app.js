@@ -150,6 +150,7 @@ async function createWindow () {
       }
     }
     pauseTrack();
+    store.delete('options.useMiniPlayer');
     electronLog.info('mainWindow.close()');
     mainWindow.destroy();
   });
@@ -176,7 +177,7 @@ app.on('change-site', () => {
       mainURL = 'https://beta.music.apple.com/';
       windowTitle = appName;
     }
-    logMessage = 'Note: Switching to Beta site';
+    logMessage = 'Note: Switching to beta site';
   } else {
     if (store.get('options.useBrowse')) {
       mainURL = 'https://music.apple.com/us/browse';
@@ -191,12 +192,10 @@ app.on('change-site', () => {
       mainURL = 'https://music.apple.com/';
       windowTitle = appName;
     }
-    logMessage = undefined;
+    logMessage = 'Note: Switching to regular site';
   }
   electronLog.info('Switching to ' + mainURL);
-  if (store.get('options.useBetaSite')) {
-    electronLog.warn(logMessage);
-  }
+  electronLog.warn(logMessage);
   mainWindow.loadURL(mainURL);
   mainWindow.setTitle(windowTitle);
   mainWindow.on('page-title-updated', function(e) {
@@ -260,6 +259,31 @@ function handleTray() {
     electronLog.error('handleTray() failed: ' + error);
   }
 }
+
+// miniPlayer
+ipcMain.on("toggle-miniplayer", () => {
+  if (store.get('options.useMiniPlayer')) {
+    electronLog.info('Switching to MiniPlayer mode');
+    mainWindow.isMiniplayerActive = true;
+    mainWindow.setSize(350, 350);
+    mainWindow.setMinimumSize(300, 120);
+    mainWindow.setMaximumSize(350, 350);
+    // mainWindow.webContents.executeJavaScript("_miniPlayer.setMiniPlayer(true)").catch((e) => console.error(e));
+    if (mainWindow.isMaximized) {
+      mainWindow.unmaximize();
+    }
+    mainWindow.maximizable = false;
+    mainWindow.webContents.reload();
+  } else {
+    electronLog.info('Switching to normal mode');
+    mainWindow.isMiniplayerActive = false;
+    mainWindow.setMaximumSize(9999, 9999);
+    mainWindow.setMinimumSize(300, 55);
+    mainWindow.setSize(1024, 700);
+    mainWindow.maximizable = true;
+    // mainWindow.webContents.executeJavaScript("_miniPlayer.setMiniPlayer(false)").catch((e) => console.error(e));
+  }
+});
 
 function createPopOutWindow() {
   const popoutWindow = new BrowserWindow({
