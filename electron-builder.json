@@ -1,7 +1,7 @@
 {
-  "electronVersion": "22.3.24",
+  "electronVersion": "22.3.25",
   "electronDownload": {
-    "version": "22.3.24+wvcus",
+    "version": "22.3.25+wvcus",
     "mirror": "https://github.com/castlabs/electron-releases/releases/download/v"
   },
   "asar": true,
