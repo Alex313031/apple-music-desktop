@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, Menu, nativeTheme, shell } = require('electron');
+const { app, BrowserWindow, Menu, nativeTheme, shell } = require('electron');
 const electronLog = require('electron-log');
 const path = require('path');
 const appName = app.getName();
@@ -102,7 +102,11 @@ module.exports = (app, mainWindow, store) => {
           } else {
             store.set('options.useBetaSite', true);
           }
-          app.emit('change-site');
+          app.emit('pause');
+          function changeSite () {
+            app.emit('change-site');
+          }
+          setTimeout(changeSite, 500);
         },
         checked: store.get('options.useBetaSite')
       },
@@ -115,7 +119,7 @@ module.exports = (app, mainWindow, store) => {
           } else {
             store.set('options.useMiniPlayer', true);
           }
-          ipcMain.emit('toggle-miniplayer');
+          app.emit('toggle-miniplayer');
         },
         checked: false
       },

@@ -40,31 +40,25 @@ const argsCmd = process.argv; // Global cmdline object.
 if (store.get('options.useBetaSite')) {
   if (store.get('options.useBrowse')) {
     mainURL = 'https://beta.music.apple.com/us/browse';
-    windowTitle = appName + ' - Browse';
   } else if (store.get('options.useRecent')) {
     mainURL = 'https://beta.music.apple.com/us/library/recently-added';
-    windowTitle = appName + ' - Recently Added';
   } else if (store.get('options.useArtists')) {
     mainURL = 'https://beta.music.apple.com/us/library/artists';
-    windowTitle = appName + ' - Artists';
   } else {
     mainURL = 'https://beta.music.apple.com/';
-    windowTitle = appName;
   }
+  windowTitle = appName + ' Beta';
 } else {
   if (store.get('options.useBrowse')) {
     mainURL = 'https://music.apple.com/us/browse';
-    windowTitle = appName + ' - Browse';
   } else if (store.get('options.useRecent')) {
     mainURL = 'https://music.apple.com/us/library/recently-added';
-    windowTitle = appName + ' - Recently Added';
   } else if (store.get('options.useArtists')) {
     mainURL = 'https://music.apple.com/us/library/artists';
-    windowTitle = appName + ' - Artists';
   } else {
     mainURL = 'https://music.apple.com/';
-    windowTitle = appName;
   }
+  windowTitle = appName;
 }
 
 async function createWindow () {
@@ -161,38 +155,37 @@ async function createWindow () {
   });
 }
 
+app.on('reload', () => {
+  mainWindow.reload();
+  electronLog.info('mainWindow reloaded');
+});
+
 app.on('change-site', () => {
   let logMessage;
   if (store.get('options.useBetaSite')) {
     if (store.get('options.useBrowse')) {
       mainURL = 'https://beta.music.apple.com/us/browse';
-      windowTitle = appName + ' - Browse';
     } else if (store.get('options.useRecent')) {
       mainURL = 'https://beta.music.apple.com/us/library/recently-added';
-      windowTitle = appName + ' - Recently Added';
     } else if (store.get('options.useArtists')) {
       mainURL = 'https://beta.music.apple.com/us/library/artists';
-      windowTitle = appName + ' - Artists';
     } else {
       mainURL = 'https://beta.music.apple.com/';
-      windowTitle = appName;
     }
     logMessage = 'Note: Switching to beta site';
+    windowTitle = appName + ' Beta';
   } else {
     if (store.get('options.useBrowse')) {
       mainURL = 'https://music.apple.com/us/browse';
-      windowTitle = appName + ' - Browse';
     } else if (store.get('options.useRecent')) {
       mainURL = 'https://music.apple.com/us/library/recently-added';
-      windowTitle = appName + ' - Recently Added';
     } else if (store.get('options.useArtists')) {
       mainURL = 'https://music.apple.com/us/library/artists';
-      windowTitle = appName + ' - Artists';
     } else {
       mainURL = 'https://music.apple.com/';
-      windowTitle = appName;
     }
     logMessage = 'Note: Switching to regular site';
+    windowTitle = appName;
   }
   electronLog.info('Switching to ' + mainURL);
   electronLog.warn(logMessage);
@@ -261,27 +254,29 @@ function handleTray() {
 }
 
 // miniPlayer
-ipcMain.on("toggle-miniplayer", () => {
+app.on("toggle-miniplayer", () => {
   if (store.get('options.useMiniPlayer')) {
     electronLog.info('Switching to MiniPlayer mode');
-    mainWindow.isMiniplayerActive = true;
-    mainWindow.setSize(350, 350);
-    mainWindow.setMinimumSize(300, 120);
-    mainWindow.setMaximumSize(350, 350);
-    // mainWindow.webContents.executeJavaScript("_miniPlayer.setMiniPlayer(true)").catch((e) => console.error(e));
     if (mainWindow.isMaximized) {
       mainWindow.unmaximize();
     }
-    mainWindow.maximizable = false;
+    mainWindow.setSize(500, 500);
+    mainWindow.setSize(360, 350);
     mainWindow.webContents.reload();
+    // mainWindow.webContents.executeJavaScript("_miniPlayer.setMiniPlayer(true)").catch((e) => console.error(e));
+    Menu.setApplicationMenu(mainMenu(app, mainWindow, store));
+    mainWindow.isMiniplayerActive = true;
   } else {
     electronLog.info('Switching to normal mode');
-    mainWindow.isMiniplayerActive = false;
-    mainWindow.setMaximumSize(9999, 9999);
-    mainWindow.setMinimumSize(300, 55);
     mainWindow.setSize(1024, 700);
-    mainWindow.maximizable = true;
-    // mainWindow.webContents.executeJavaScript("_miniPlayer.setMiniPlayer(false)").catch((e) => console.error(e));
+    mainWindow.webContents.reload();
+    Menu.setApplicationMenu(mainMenu(app, mainWindow, store));
+    mainWindow.isMiniplayerActive = false;
+  }
+  if (mainWindow.isMiniplayerActive == true) {
+    electronLog.info('MiniPlayer is active');
+  } else {
+    electronLog.info('MiniPlayer disabled');
   }
 });
 
@@ -473,12 +468,24 @@ function browserDomReady() {
   }
 }
 
+function playTrack () {
+  mainWindow.webContents.executeJavaScript(audioControlJS.play());
+}
+
 function pauseTrack () {
   mainWindow.webContents.executeJavaScript(audioControlJS.pause());
 }
 
 app.on('get-track-info', () => {
   mainWindow.webContents.executeJavaScript(audioControlJS.getInfo());
+});
+
+app.on('play', () => {
+  mainWindow.webContents.executeJavaScript(audioControlJS.play());
+});
+
+app.on('pause', () => {
+  mainWindow.webContents.executeJavaScript(audioControlJS.pause());
 });
 
 app.on('play-pause', () => {
