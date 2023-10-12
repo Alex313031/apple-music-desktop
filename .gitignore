@@ -1,12 +1,15 @@
 .DS_Store
 .eslintcache
 Thumbs.db
-/dist/
+thumbs.db
 /electron/
 /test/
+/node_modules/
+/dist/
 /release/
 node_modules
 yarn.lock
+
 
 # IntelliJ platform
 .idea/
