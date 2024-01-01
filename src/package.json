@@ -20,7 +20,7 @@
     "winstart": "electron ."
   },
   "dependencies": {
-    "@electron/remote": "2.0.12",
+    "@electron/remote": "2.1.1",
     "electron-context-menu": "3.6.1",
     "electron-log": "4.4.8",
     "electron-store": "8.1.0",
