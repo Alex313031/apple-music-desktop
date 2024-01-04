@@ -3,7 +3,7 @@
   "appName": "Apple Music",
   "productName": "Apple Music",
   "applicationId": "com.alex313031.apple-music-desktop",
-  "version": "2.0.4",
+  "version": "2.0.5",
   "description": "An Electron app that provides a native Apple Music experience for Linux & Windows.",
   "author": "Alex313031",
   "license": "BSD-3-Clause",
@@ -22,7 +22,7 @@
   "dependencies": {
     "@electron/remote": "2.1.1",
     "electron-context-menu": "3.6.1",
-    "electron-log": "4.4.8",
+    "electron-log": "5.0.3",
     "electron-store": "8.1.0",
     "electron-util": "0.17.2"
   },
