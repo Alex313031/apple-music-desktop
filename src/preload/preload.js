@@ -20,7 +20,7 @@ window.addEventListener('DOMContentLoaded', () => {
     const element = document.getElementById(selector)
     if (element) element.innerText = text
   }
-  replaceText(`app-version`, appVersion)
+  replaceText('app-version', appVersion)
 });
 
 console.log('electron.renderer: Electron versions exported');
