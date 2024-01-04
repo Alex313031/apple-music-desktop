@@ -503,9 +503,8 @@ app.on('before-quit', () => {
   pauseTrack();
 });
 
-app.on('quit', () => {
+app.on('will-quit', () => {
   electronLog.warn('Apple Music is quitting now');
-  app.quit();
 });
 
 // On macOS it's common to re-create a window in the app when the
