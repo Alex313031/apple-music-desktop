@@ -22,7 +22,7 @@ module.exports = (app, mainWindow, store) => {
         accelerator: 'Alt+Left',
         click(item, focusedWindow) {
           if (focusedWindow) focusedWindow.webContents.goBack();
-          var currentURL = focusedWindow.webContents.getURL();
+          const currentURL = focusedWindow.webContents.getURL();
           electronLog.info('Navigated backward to ' + [ currentURL ]);
         }
       },
@@ -31,7 +31,7 @@ module.exports = (app, mainWindow, store) => {
         accelerator: 'Alt+Right',
         click(item, focusedWindow) {
           if (focusedWindow) focusedWindow.webContents.goForward();
-          var currentURL = focusedWindow.webContents.getURL();
+          const currentURL = focusedWindow.webContents.getURL();
           electronLog.info('Navigated forward to ' + [ currentURL ]);
         }
       },
@@ -103,7 +103,7 @@ module.exports = (app, mainWindow, store) => {
             store.set('options.useBetaSite', true);
           }
           app.emit('pause');
-          function changeSite () {
+          function changeSite() {
             app.emit('change-site');
           }
           setTimeout(changeSite, 500);
@@ -214,12 +214,15 @@ module.exports = (app, mainWindow, store) => {
       {
         label: 'Edit Config File',
         click() {
-          store.openInEditor();
           electronLog.info('Editing Config File');
           if (isLinux) {
+            electronLog.info('\n Note that JSON must be a recognized file type \n for the OS to open the config.json file.\n');
+            electronLog.info('\n On Linux, a default text editor for handling JSON files must also be present and configured correctly.\n');
+            store.openInEditor();
             return;
           } else {
-            console.log('\n Note that JSON must be a recognized file type \n for the OS to open the config.json file.\n');
+            electronLog.info('\n Note that JSON must be a recognized file type \n for the OS to open the config.json file.\n');
+            store.openInEditor();
           }
         }
       }
@@ -251,7 +254,7 @@ module.exports = (app, mainWindow, store) => {
         label: 'Toggle Developer Tools',
         accelerator: isMac ? 'Alt+Command+I' : 'Ctrl+Shift+I',
         click(item, focusedWindow) {
-          var currentURL = focusedWindow.webContents.getURL();
+          const currentURL = focusedWindow.webContents.getURL();
           electronLog.info('Toggling Developer Tools on ' + currentURL);
           focusedWindow.webContents.toggleDevTools();
         }
@@ -269,7 +272,7 @@ module.exports = (app, mainWindow, store) => {
     submenu: [
       {
         label: 'Reload F5',
-        accelerator:  'F5',
+        accelerator: 'F5',
         visible: false,
         acceleratorWorksWhenHidden: true,
         click(item, focusedWindow) {
@@ -280,7 +283,7 @@ module.exports = (app, mainWindow, store) => {
         label: 'Open Log File',
         click() {
           electronLog.info('Opening ' + [ userLogFile ]);
-          const logWindow = new BrowserWindow({width: 600, height: 700, useContentSize: true, title: userLogFile});
+          const logWindow = new BrowserWindow({ width: 600, height: 700, useContentSize: true, title: userLogFile });
           logWindow.loadFile(userLogFile);
         }
       },
@@ -288,7 +291,7 @@ module.exports = (app, mainWindow, store) => {
         label: 'Open config.json',
         click() {
           electronLog.info('Opening ' + [ userConfigJson ]);
-          const confWindow = new BrowserWindow({width: 600, height: 700, useContentSize: true, title: userConfigJson});
+          const confWindow = new BrowserWindow({ width: 600, height: 700, useContentSize: true, title: userConfigJson });
           confWindow.loadFile(userConfigJson);
         }
       },
@@ -341,7 +344,7 @@ module.exports = (app, mainWindow, store) => {
         label: 'Open chrome://gpu',
         accelerator: 'CmdorCtrl+Alt+G',
         click() {
-          const gpuWindow = new BrowserWindow({width: 900, height: 700, useContentSize: true, title: "GPU Internals"});
+          const gpuWindow = new BrowserWindow({ width: 900, height: 700, useContentSize: true, title: 'GPU Internals' });
           gpuWindow.loadURL('chrome://gpu');
           electronLog.info('Opened chrome://gpu');
         }
@@ -350,7 +353,7 @@ module.exports = (app, mainWindow, store) => {
         label: 'Open chrome://process-internals',
         accelerator: 'CmdorCtrl+Alt+P',
         click() {
-          const procsWindow = new BrowserWindow({width: 900, height: 700, useContentSize: true, title: "Process Model Internals"});
+          const procsWindow = new BrowserWindow({ width: 900, height: 700, useContentSize: true, title: 'Process Model Internals' });
           procsWindow.loadURL('chrome://process-internals');
           electronLog.info('Opened chrome://process-internals');
         }
@@ -359,7 +362,7 @@ module.exports = (app, mainWindow, store) => {
         label: 'Open chrome://media-internals',
         accelerator: 'CmdorCtrl+Alt+M',
         click() {
-          const mediaWindow = new BrowserWindow({width: 900, height: 700, useContentSize: true, title: "Media Internals"});
+          const mediaWindow = new BrowserWindow({ width: 900, height: 700, useContentSize: true, title: 'Media Internals' });
           mediaWindow.loadURL('chrome://media-internals');
           electronLog.info('Opened chrome://media-internals');
         }
@@ -371,9 +374,10 @@ module.exports = (app, mainWindow, store) => {
     label: 'About',
     submenu: [
       { label: 'Apple Music Desktop v' + app.getVersion(), enabled: false },
-      { label: 'Created by Alex313031',
+      {
+        label: 'Created by Alex313031',
         click() {
-          new BrowserWindow({width: 1024, height: 700, useContentSize: true}).loadURL('https://github.com/Alex313031/apple-music-desktop#readme');
+          new BrowserWindow({ width: 1024, height: 700, useContentSize: true }).loadURL('https://github.com/Alex313031/apple-music-desktop#readme');
         }
       },
       { type: 'separator' },
@@ -381,7 +385,7 @@ module.exports = (app, mainWindow, store) => {
         label: 'View Humans.txt',
         accelerator: 'CmdorCtrl+Alt+Shift+H',
         click() {
-          const humansWindow = new BrowserWindow({width: 400, height: 450, useContentSize: true, title: "humans.txt", darkTheme: store.get('options.useLightMode') ? false : true});
+          const humansWindow = new BrowserWindow({ width: 400, height: 450, useContentSize: true, title: 'humans.txt', darkTheme: store.get('options.useLightMode') ? false : true });
           humansWindow.loadFile('./humans.txt');
           electronLog.info('Opened humans.txt :)');
         }
@@ -390,7 +394,7 @@ module.exports = (app, mainWindow, store) => {
         label: 'View License',
         accelerator: 'CmdorCtrl+Alt+Shift+L',
         click() {
-          const licenseWindow = new BrowserWindow({width: 532, height: 632, useContentSize: true, title: "License", darkTheme: store.get('options.useLightMode') ? false : true});
+          const licenseWindow = new BrowserWindow({ width: 532, height: 632, useContentSize: true, title: 'License', darkTheme: store.get('options.useLightMode') ? false : true });
           licenseWindow.loadFile('./license.md');
           electronLog.info('Opened license.md');
         }
@@ -403,7 +407,7 @@ module.exports = (app, mainWindow, store) => {
             width: 350,
             height: 320,
             useContentSize: true,
-            title: "About App",
+            title: 'About App',
             icon: isWin ? path.join(__dirname, 'imgs/icon.ico') : path.join(__dirname, 'imgs/icon64.png'),
             darkTheme: store.get('options.useLightMode') ? false : true,
             webPreferences: {
@@ -418,9 +422,9 @@ module.exports = (app, mainWindow, store) => {
               plugins: true,
               enableRemoteModule: true,
               preload: path.join(__dirname, 'preload/preload.js')
-            },
+            }
           });
-          require("@electron/remote/main").enable(aboutWindow.webContents);
+          require('@electron/remote/main').enable(aboutWindow.webContents);
           if (store.get('options.useLightMode')) {
             nativeTheme.themeSource = 'light';
           } else {

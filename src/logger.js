@@ -7,22 +7,22 @@ const userLogFile = path.join(userDataDir, 'logs/main.log');
 const userOldLogFile = path.join(userDataDir, 'logs/main.log.old');
 
 // Get app version from package.json
-var appVersion = app.getVersion();
+const appVersion = app.getVersion();
 // Get Electron versions
-var electronVersion = process.versions.electron;
-var chromeVersion = process.versions.chrome;
-var nodeVersion = process.versions.node;
-var v8Version = process.versions.v8;
+const electronVersion = process.versions.electron;
+const chromeVersion = process.versions.chrome;
+const nodeVersion = process.versions.node;
+const v8Version = process.versions.v8;
 
 module.exports.startLogging = (store) => {
-  var disableLogging
+  let disableLogging
   if (store.get('options.disableLogging')) {
     disableLogging = true;
   } else {
     disableLogging = false;
   }
 
-  if (disableLogging == true) {
+  if (disableLogging === true) {
     electronLog.warn('Note: Logging is disabled');
   } else {
     // I'm a Log freak, can you tell?

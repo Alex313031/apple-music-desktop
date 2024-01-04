@@ -3,42 +3,49 @@ const isDev = process.env.NODE_ENV === 'development';
 
 module.exports = (app) => {
   return Menu.buildFromTemplate([
-  { label: 'Play/Pause',
-    click: function () {
+  {
+    label: 'Play/Pause',
+    click: function() {
       app.emit('play-pause');
     }
   },
-  { label: 'Next Track',
-    click: function () {
+  {
+    label: 'Next Track',
+    click: function() {
       app.emit('next-track');
     }
   },
-  { label: 'Previous Track',
-    click: function () {
+  {
+    label: 'Previous Track',
+    click: function() {
       app.emit('previous-track');
     }
   },
-  { label: 'Get Info',
+  {
+    label: 'Get Info',
     visible: isDev,
-    click: function () {
+    click: function() {
       app.emit('get-track-info');
     }
   },
   { type: 'separator' },
-  { label: 'Minimize to Tray',
-    click: function () {
+  {
+    label: 'Minimize to Tray',
+    click: function() {
       app.emit('minimize-to-tray');
     }
   },
-  { label: 'Show',
+  {
+    label: 'Show',
     visible: true,
-    click: function () {
+    click: function() {
       app.emit('show-from-tray');
     }
   },
-  { label: 'Quit',
+  {
+    label: 'Quit',
     role: 'quit',
-    click: function () {
+    click: function() {
       app.quit();
     }
   }

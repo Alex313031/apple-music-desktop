@@ -9,7 +9,6 @@ const mainMenu = require('./menu.js'); // For making native menu
 const mainLogger = require('./logger.js'); // Misc. logging
 // Create config.json
 const store = new Store();
-const appName = app.getName();
 
 // Initialize Electron remote module
 require('@electron/remote/main').initialize();
@@ -21,8 +20,10 @@ const injectScript = fs.readFileSync(path.join(__dirname, 'renderer/index.js'), 
 const volumeScript = fs.readFileSync(path.join(__dirname, 'renderer/volume.js'), 'utf8');
 const musicKitInit = fs.readFileSync(path.join(__dirname, 'renderer/musickit.js'), 'utf8');
 const trackInfoScript = fs.readFileSync(path.join(__dirname, 'preload/info.js'), 'utf8');
-// Get app version from package.json
-var appVersion = app.getVersion();
+
+// Get app details from package.json
+const appVersion = app.getVersion();
+const appName = app.getName();
 
 mainLogger.handleLogging(store);
 
@@ -61,7 +62,7 @@ if (store.get('options.useBetaSite')) {
   windowTitle = appName;
 }
 
-async function createWindow () {
+async function createWindow() {
   mainWindow = new BrowserWindow({
     title: windowTitle,
     resizable: true,
@@ -87,12 +88,12 @@ async function createWindow () {
       preload: path.join(__dirname, 'preload/client-preload.js')
     }
   });
-  require("@electron/remote/main").enable(mainWindow.webContents);
+  require('@electron/remote/main').enable(mainWindow.webContents);
   Menu.setApplicationMenu(mainMenu(app, mainWindow, store));
 
   // Reset the Window's size and location
-  let windowDetails = store.get('options.windowDetails');
-  let relaunchWindowDetails = store.get('relaunch.windowDetails');
+  const windowDetails = store.get('options.windowDetails');
+  const relaunchWindowDetails = store.get('relaunch.windowDetails');
   if (relaunchWindowDetails) {
     mainWindow.setPosition(
       relaunchWindowDetails.position[0],
@@ -126,7 +127,7 @@ async function createWindow () {
   mainWindow.webContents.on('did-finish-load', () => {
     browserDomReady();
   });
-  if (mainURL == 'https://beta.music.apple.com/') {
+  if (mainURL === 'https://beta.music.apple.com/') {
     electronLog.warn('Note: Using Beta site');
   }
 
@@ -206,7 +207,7 @@ app.on('change-site', () => {
   });
 });
 
-function showFromTray () {
+function showFromTray() {
   if (isLinux) {
     mainWindow.show();
   } else {
@@ -219,7 +220,7 @@ function showFromTray () {
   electronLog.info('Restored from Tray');
 }
 
-function minimizeToTray () {
+function minimizeToTray() {
   mainWindow.hide();
   electronLog.info('Minimized to Tray');
 }
@@ -254,7 +255,7 @@ function handleTray() {
 }
 
 // miniPlayer
-app.on("toggle-miniplayer", () => {
+app.on('toggle-miniplayer', () => {
   if (store.get('options.useMiniPlayer')) {
     electronLog.info('Switching to MiniPlayer mode');
     if (mainWindow.isMaximized) {
@@ -273,7 +274,7 @@ app.on("toggle-miniplayer", () => {
     Menu.setApplicationMenu(mainMenu(app, mainWindow, store));
     mainWindow.isMiniplayerActive = false;
   }
-  if (mainWindow.isMiniplayerActive == true) {
+  if (mainWindow.isMiniplayerActive === true) {
     electronLog.info('MiniPlayer is active');
   } else {
     electronLog.info('MiniPlayer disabled');
@@ -296,7 +297,7 @@ function createPopOutWindow() {
       devTools: true,
       javascript: true,
       plugins: true,
-      enableRemoteModule: true,
+      enableRemoteModule: true
     }
   });
   popoutWindow.loadURL('https://www.google.com/');
@@ -319,13 +320,13 @@ contextMenu({
   showLookUpSelection: true,
   showSearchWithGoogle: true,
   prepend: (defaultActions, parameters) => [
-  { label: 'Open Video in New Window',
+  {
+    label: 'Open Video in New Window',
     // Only show it when right-clicking text
     visible: parameters.mediaType === 'video',
     click: () => {
       const vidURL = parameters.srcURL;
-      let vidTitle;
-      vidTitle = vidURL.substring(vidURL.lastIndexOf('/') + 1);
+      const vidTitle = vidURL.substring(vidURL.lastIndexOf('/') + 1);
       const newWin = new BrowserWindow({
         title: vidTitle,
         useContentSize: true,
@@ -339,14 +340,15 @@ contextMenu({
           devTools: true,
           javascript: true,
           plugins: true,
-          enableRemoteModule: true,
+          enableRemoteModule: true
         }
       });
       newWin.loadURL(vidURL);
       electronLog.info('Popped out Video');
     }
   },
-  { label: 'Open Link in New Window',
+  {
+    label: 'Open Link in New Window',
     // Only show it when right-clicking a link
     visible: parameters.linkURL.trim().length > 0,
     click: () => {
@@ -365,7 +367,7 @@ contextMenu({
           devTools: true,
           javascript: true,
           plugins: true,
-          enableRemoteModule: true,
+          enableRemoteModule: true
         }
       });
       const toURL = parameters.linkURL;
@@ -397,7 +399,7 @@ app.on('restart-confirm', () => {
     dialog.showMessageBox(mainWindow, {
         'type': 'question',
         'title': 'Restart Confirmation',
-        'message': "Are you sure you want to restart Apple Music?",
+        'message': 'Are you sure you want to restart Apple Music?',
         'buttons': [
             'Yes',
             'No'
@@ -420,12 +422,12 @@ ipcMain.handle('finished-preload', () => {
 
 ipcMain.on('track-name', (event, trackName) => {
   electronLog.info('Now Playing: ' + trackName)
-  function createTrackWindow () {
+  function createTrackWindow() {
     const trackWindow = new BrowserWindow({
       width: 400,
       height: 400,
       useContentSize: true,
-      title: "Current Track Info",
+      title: 'Current Track Info',
       icon: isWin ? path.join(__dirname, 'imgs/icon.ico') : path.join(__dirname, 'imgs/icon64.png'),
       darkTheme: store.get('options.useLightMode') ? false : true,
       webPreferences: {
@@ -440,9 +442,9 @@ ipcMain.on('track-name', (event, trackName) => {
         plugins: true,
         enableRemoteModule: true,
         preload: path.join(__dirname, 'preload/info.js')
-      },
+      }
     });
-    require("@electron/remote/main").enable(trackWindow.webContents);
+    require('@electron/remote/main').enable(trackWindow.webContents);
     if (store.get('options.useLightMode')) {
       nativeTheme.themeSource = 'light';
     } else {
@@ -468,11 +470,11 @@ function browserDomReady() {
   }
 }
 
-function playTrack () {
-  mainWindow.webContents.executeJavaScript(audioControlJS.play());
-}
+// function playTrack() {
+  // mainWindow.webContents.executeJavaScript(audioControlJS.play());
+// }
 
-function pauseTrack () {
+function pauseTrack() {
   mainWindow.webContents.executeJavaScript(audioControlJS.pause());
 }
 
@@ -536,7 +538,7 @@ app.commandLine.appendSwitch('enable-quic');
 app.commandLine.appendSwitch('enable-ui-devtools');
 app.commandLine.appendSwitch('ignore-gpu-blocklist');
 app.commandLine.appendSwitch('enable-gpu-rasterization');
-app.commandLine.appendSwitch('enable-features','CSSColorSchemeUARendering,ImpulseScrollAnimations,ParallelDownloading,Portals,StorageBuckets,JXL');
+app.commandLine.appendSwitch('enable-features', 'CSSColorSchemeUARendering,ImpulseScrollAnimations,ParallelDownloading,Portals,StorageBuckets,JXL');
 // Enable remote debugging only if we in development mode
 if (process.env.NODE_ENV === 'development') {
   const portNumber = '9222'
@@ -545,7 +547,7 @@ if (process.env.NODE_ENV === 'development') {
 }
 
 // I'm a Log freak, can you tell?
-function logAppInfo () {
+function logAppInfo() {
   mainLogger.startLogging(store);
 }
 
@@ -561,7 +563,7 @@ app.on('remote-get-current-web-contents', rejectEvent);
 app.on('remote-get-guest-web-contents', rejectEvent);
 
 // Fire it up
-app.whenReady().then(async () => {
+app.whenReady().then(async() => {
   if (argsCmd.includes('--cdm-info')) {
     await components.whenReady();
     console.log('WidevineCDM Component Info:\n');

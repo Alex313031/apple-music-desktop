@@ -1,5 +1,3 @@
-const remote = require('@electron/remote');
-
 // Show app version in about.html
 window.addEventListener('DOMContentLoaded', () => {
   const replaceText = (selector, text) => {

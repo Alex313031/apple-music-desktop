@@ -1,36 +1,36 @@
-ipcRenderer = require("electron").ipcRenderer;
+ipcRenderer = require('electron').ipcRenderer;
 
 // Audio functions used in the tray. They inject into the webpage
 // but it is also a module that the main process require()s.
-// These are called with or without authorization: 
-function play () {
+// These are called with or without authorization:
+function play() {
   return `MusicKitInterop.play();
   console.log('Played a Track');`
 }
 
-function pause () {
+function pause() {
   return `MusicKitInterop.pause();
   console.log('Paused a Track');`
 }
 
-function playPause () {
+function playPause() {
   return `MusicKitInterop.playPause();
   console.log('Played/Paused a Track');`
 }
 
-function nextTrack () {
+function nextTrack() {
   return `
   MusicKitInterop.next();
   console.log('Went to next Track');
   `
 }
 
-function previousTrack () {
+function previousTrack() {
   return `MusicKitInterop.previous();
   console.log('Went to previous Track');`
 }
 
-function getInfo () {
+function getInfo() {
   return `
     try {
       let trackName = MusicKitInterop.getAttributes().name;
@@ -42,7 +42,6 @@ function getInfo () {
       console.log('Track is not playing');
       ipcRenderer.send('track-name', trackName);
     }`
-  
 }
 
 exports.play = play;
