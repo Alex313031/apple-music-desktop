@@ -418,9 +418,6 @@ module.exports = (app, mainWindow, store) => {
               experimentalFeatures: true,
               webviewTag: true,
               devTools: true,
-              javascript: true,
-              plugins: true,
-              enableRemoteModule: true,
               preload: path.join(__dirname, 'preload/preload.js')
             }
           });

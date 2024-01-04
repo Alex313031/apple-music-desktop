@@ -82,9 +82,6 @@ async function createWindow() {
       experimentalFeatures: true,
       webviewTag: true,
       devTools: true,
-      javascript: true,
-      plugins: true,
-      enableRemoteModule: true,
       preload: path.join(__dirname, 'preload/client-preload.js')
     }
   });
@@ -294,10 +291,7 @@ function createPopOutWindow() {
       sandbox: true,
       experimentalFeatures: true,
       webviewTag: true,
-      devTools: true,
-      javascript: true,
-      plugins: true,
-      enableRemoteModule: true
+      devTools: true
     }
   });
   popoutWindow.loadURL('https://www.google.com/');
@@ -337,10 +331,7 @@ contextMenu({
           sandbox: true,
           experimentalFeatures: true,
           webviewTag: true,
-          devTools: true,
-          javascript: true,
-          plugins: true,
-          enableRemoteModule: true
+          devTools: true
         }
       });
       newWin.loadURL(vidURL);
@@ -364,10 +355,7 @@ contextMenu({
           sandbox: true,
           experimentalFeatures: true,
           webviewTag: true,
-          devTools: true,
-          javascript: true,
-          plugins: true,
-          enableRemoteModule: true
+          devTools: true
         }
       });
       const toURL = parameters.linkURL;
@@ -438,9 +426,6 @@ ipcMain.on('track-name', (event, trackName) => {
         experimentalFeatures: true,
         webviewTag: true,
         devTools: true,
-        javascript: true,
-        plugins: true,
-        enableRemoteModule: true,
         preload: path.join(__dirname, 'preload/info.js')
       }
     });
