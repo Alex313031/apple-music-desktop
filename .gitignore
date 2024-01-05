@@ -1,7 +1,6 @@
 .DS_Store
 .eslintcache
 Thumbs.db
-thumbs.db
 /electron/
 /test/
 /node_modules/
