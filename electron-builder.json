@@ -13,6 +13,7 @@
       "buildResources": "build",
       "output": "dist"
   },
+  "files": [ "**/*" ],
   "extraFiles": [
     {
       "from": "assets/icon.png"
@@ -20,9 +21,6 @@
     {
       "from": "assets/README.txt"
     }
-  ],
-  "files": [
-    "**/*"
   ],
   "linux": {
     "target": [
@@ -46,8 +44,8 @@
   "win": {
     "target": [
       "zip",
-      "nsis",
-      "portable"
+      "portable",
+      "nsis"
     ],
     "publisherName": "Alex313031",
     "executableName": "apple_music",
@@ -63,5 +61,15 @@
   },
   "portable": {
     "artifactName": "apple_music_portable_${version}_${arch}.${ext}"
+  },
+  "mac": {
+    "category": "public.app-category.entertainment",
+    "icon": "build/icon.icns",
+    "darkModeSupport": true,
+    "artifactName": "apple_music_${version}_macos_${arch}.${ext}",
+    "target": [
+      "dmg",
+      "zip"
+    ]
   }
 }
