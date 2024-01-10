@@ -405,7 +405,7 @@ module.exports = (app, mainWindow, store) => {
         click() {
           const aboutWindow = new BrowserWindow({
             width: 350,
-            height: 300,
+            height: 308,
             useContentSize: true,
             title: 'About App',
             icon: isWin ? path.join(__dirname, 'imgs/icon.ico') : path.join(__dirname, 'imgs/icon64.png'),
