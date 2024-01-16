@@ -504,7 +504,7 @@ app.on('before-quit', () => {
 });
 
 app.on('will-quit', () => {
-  electronLog.warn('Apple Music is quitting now');
+  electronLog.warn(appName + ' is quitting now');
 });
 
 // On macOS it's common to re-create a window in the app when the
@@ -556,12 +556,12 @@ app.whenReady().then(async() => {
   } else {
     // Initialize Widevine
     await components.whenReady();
-    electronLog.info('Welcome to Apple Music Desktop!');
+    electronLog.info('Welcome to ' + appName + ' Desktop!');
     electronLog.info('WidevineCDM component ready.');
     logAppInfo();
     handleTray();
     createWindow();
     store.set('version', appVersion);
-    electronLog.info('mainURL is: ' + mainURL);
+    electronLog.info('Loading mainURL: ' + mainURL);
   }
 });

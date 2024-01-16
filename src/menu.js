@@ -385,7 +385,14 @@ module.exports = (app, mainWindow, store) => {
         label: 'View Humans.txt',
         accelerator: 'CmdorCtrl+Alt+Shift+H',
         click() {
-          const humansWindow = new BrowserWindow({ width: 400, height: 450, useContentSize: true, title: 'humans.txt', darkTheme: store.get('options.useLightMode') ? false : true });
+          const humansWindow = new BrowserWindow({
+            width: 400,
+            height: 450,
+            useContentSize: true,
+            autoHideMenuBar: true,
+            darkTheme: store.get('options.useLightMode') ? false : true,
+            title: 'humans.txt'
+          });
           humansWindow.loadFile('./humans.txt');
           electronLog.info('Opened humans.txt :)');
         }
@@ -394,7 +401,14 @@ module.exports = (app, mainWindow, store) => {
         label: 'View License',
         accelerator: 'CmdorCtrl+Alt+Shift+L',
         click() {
-          const licenseWindow = new BrowserWindow({ width: 532, height: 632, useContentSize: true, title: 'License', darkTheme: store.get('options.useLightMode') ? false : true });
+          const licenseWindow = new BrowserWindow({
+            width: 532,
+            height: 632,
+            useContentSize: true,
+            autoHideMenuBar: true,
+            darkTheme: store.get('options.useLightMode') ? false : true,
+            title: 'License'
+          });
           licenseWindow.loadFile('./license.md');
           electronLog.info('Opened license.md');
         }
@@ -407,6 +421,7 @@ module.exports = (app, mainWindow, store) => {
             width: 350,
             height: 308,
             useContentSize: true,
+            autoHideMenuBar: true,
             title: 'About App',
             icon: isWin ? path.join(__dirname, 'imgs/icon.ico') : path.join(__dirname, 'imgs/icon64.png'),
             darkTheme: store.get('options.useLightMode') ? false : true,
