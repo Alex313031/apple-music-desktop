@@ -8,9 +8,9 @@ python3 -m castlabs_evs.vmp sign-pkg dist\win-unpacked
 
 python3 -m castlabs_evs.vmp sign-pkg dist\win-ia32-unpacked
 
-python3 -m castlabs_evs.vmp sign-pkg dist\mac
+python3 -m castlabs_evs.vmp sign-pkg dist/mac
 
-python3 -m castlabs_evs.vmp sign-pkg dist\mac-arm64
+python3 -m castlabs_evs.vmp sign-pkg dist/mac-arm64
 
 ## For codesigning on MacOS
 
