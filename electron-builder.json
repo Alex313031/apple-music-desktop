@@ -43,6 +43,7 @@
     }
   },
   "win": {
+    "icon": "build/icon.ico",
     "target": [
       "zip",
       "portable",
