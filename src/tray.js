@@ -30,16 +30,16 @@ module.exports = (app) => {
   },
   { type: 'separator' },
   {
-    label: 'Minimize to Tray',
-    click: function() {
-      app.emit('minimize-to-tray');
-    }
-  },
-  {
     label: 'Show',
     visible: true,
     click: function() {
       app.emit('show-from-tray');
+    }
+  },
+  {
+    label: 'Minimize to Tray',
+    click: function() {
+      app.emit('minimize-to-tray');
     }
   },
   {
