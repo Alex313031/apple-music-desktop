@@ -422,6 +422,7 @@ module.exports = (app, mainWindow, store) => {
             height: 308,
             useContentSize: true,
             autoHideMenuBar: true,
+            skipTaskbar: true,
             title: 'About App',
             icon: isWin ? path.join(__dirname, 'imgs/icon.ico') : path.join(__dirname, 'imgs/icon64.png'),
             darkTheme: store.get('options.useLightMode') ? false : true,
