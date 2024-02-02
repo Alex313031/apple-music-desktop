@@ -7,6 +7,7 @@
   "description": "An Electron app that provides a native Apple Music experience for Linux & Windows.",
   "author": "Alex313031",
   "license": "BSD-3-Clause",
+  "copyright": "Copyright © 2024 Alex313031",
   "repository": "https://github.com/Alex313031/apple-music-desktop",
   "main": "./src/app.js",
   "engines": {
