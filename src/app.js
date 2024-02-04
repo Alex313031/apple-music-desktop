@@ -329,10 +329,7 @@ contextMenu({
         webPreferences: {
           nodeIntegration: false,
           nodeIntegrationInWorker: false,
-          contextIsolation: false,
-          sandbox: true,
           experimentalFeatures: true,
-          webviewTag: true,
           devTools: true
         }
       });
@@ -348,15 +345,15 @@ contextMenu({
       const imgURL = parameters.srcURL;
       const imgTitle = imgURL.substring(imgURL.lastIndexOf('/') + 1);
       const imgWin = new BrowserWindow({
-      title: imgTitle,
-      useContentSize: true,
-      darkTheme: store.get('options.useLightMode') ? false : true,
-      webPreferences: {
-        nodeIntegration: false,
-        nodeIntegrationInWorker: false,
-        experimentalFeatures: true,
-        devTools: true
-      }
+        title: imgTitle,
+        useContentSize: true,
+        darkTheme: store.get('options.useLightMode') ? false : true,
+        webPreferences: {
+          nodeIntegration: false,
+          nodeIntegrationInWorker: false,
+          experimentalFeatures: true,
+          devTools: true
+        }
       });
       imgWin.loadURL(imgURL);
       electronLog.info('Opened Image in New Window');
@@ -376,10 +373,7 @@ contextMenu({
         webPreferences: {
           nodeIntegration: false,
           nodeIntegrationInWorker: false,
-          contextIsolation: false,
-          sandbox: true,
           experimentalFeatures: true,
-          webviewTag: true,
           devTools: true
         }
       });
