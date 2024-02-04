@@ -541,7 +541,7 @@ app.commandLine.appendSwitch('enable-ui-devtools');
 app.commandLine.appendSwitch('ignore-gpu-blocklist');
 app.commandLine.appendSwitch('enable-gpu-rasterization');
 app.commandLine.appendSwitch('enable-features', 'CSSColorSchemeUARendering,ImpulseScrollAnimations,ParallelDownloading,Portals,StorageBuckets,JXL');
-// Enable remote debugging only if we in development mode
+// Enable remote debugging only if we are in development mode
 if (process.env.NODE_ENV === 'development') {
   const portNumber = '9222'
   app.commandLine.appendSwitch('remote-debugging-port', portNumber);
