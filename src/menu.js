@@ -2,8 +2,10 @@ const { app, BrowserWindow, Menu, nativeTheme, shell } = require('electron');
 const electronLog = require('electron-log');
 const path = require('path');
 const appName = app.getName();
+const userHome = app.getPath('home');
 const userDataDir = app.getPath('userData');
 const userLogFile = path.join(userDataDir, 'logs/main.log');
+const userMacLogFile = path.join(userHome, 'Library/Logs', appName, 'main.log');
 const userConfigJson = path.join(userDataDir, 'config.json');
 
 // Globally export what OS we are on
@@ -282,9 +284,15 @@ module.exports = (app, mainWindow, store) => {
       {
         label: 'Open Log File',
         click() {
-          electronLog.info('Opening ' + [ userLogFile ]);
-          const logWindow = new BrowserWindow({ width: 600, height: 700, useContentSize: true, title: userLogFile });
-          logWindow.loadFile(userLogFile);
+          if (isMac) {
+            electronLog.info('Opening ' + [ userMacLogFile ]);
+            const logWindow = new BrowserWindow({ width: 600, height: 768, useContentSize: true, title: userMacLogFile });
+            logWindow.loadFile(userMacLogFile);
+          } else {
+            electronLog.info('Opening ' + [ userLogFile ]);
+            const logWindow = new BrowserWindow({ width: 600, height: 768, useContentSize: true, title: userLogFile });
+            logWindow.loadFile(userLogFile);
+          }
         }
       },
       {
