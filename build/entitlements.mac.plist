@@ -9,6 +9,8 @@
     <key>com.apple.security.cs.disable-library-validation</key>
     <true/>
     <key>com.apple.security.cs.allow-dyld-environment-variables</key>
-    <false/>
+    <true/>
+    <key>com.apple.system.logging</key>
+    <true/>
   </dict>
 </plist>
