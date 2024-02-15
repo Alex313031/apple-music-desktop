@@ -188,6 +188,19 @@ module.exports = (app, mainWindow, store) => {
         checked: !!store.get('options.windowDetails')
       },
       {
+        label: store.get('options.autoHideMenuBar') ? 'Show MenuBar' : 'Hide MenuBar',
+        type: 'checkbox',
+        click() {
+          if (store.get('options.autoHideMenuBar')) {
+            store.set('options.autoHideMenuBar', false);
+          } else {
+            store.set('options.autoHideMenuBar', true);
+          }
+          app.emit('toggle-menubar');
+        },
+        checked: false
+      },
+      {
         label: store.get('options.disableTray') ? 'Enable Tray' : 'Disable Tray',
         type: 'checkbox',
         click() {
@@ -427,7 +440,7 @@ module.exports = (app, mainWindow, store) => {
         click() {
           const aboutWindow = new BrowserWindow({
             width: 350,
-            height: 308,
+            height: 312,
             useContentSize: true,
             autoHideMenuBar: true,
             skipTaskbar: true,

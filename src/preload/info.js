@@ -1,4 +1,5 @@
-// Show app version in about.html
+let trackName;
+
 window.addEventListener('DOMContentLoaded', () => {
   const replaceText = (selector, text) => {
     const element = document.getElementById(selector)

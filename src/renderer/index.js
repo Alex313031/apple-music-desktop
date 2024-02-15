@@ -4,9 +4,14 @@ or remove elements as needed.
 
 /* Clean up the "Open in Music" div */
 function removeElementsByClass() {
-  const elements = document.getElementsByClassName('svelte-kr6gtl');
-  while (elements.length > 0) {
-    elements[0].parentNode.removeChild(elements[0]);
+  const element1 = document.getElementsByClassName('svelte-kr6gtl');
+  while (element1.length > 0) {
+    element1[0].parentNode.removeChild(element1[0]);
+  }
+
+  const element2 = document.getElementsByClassName('upsell-banner');
+  while (element2.length > 0) {
+    element2[0].parentNode.removeChild(element2[0]);
   }
 }
 

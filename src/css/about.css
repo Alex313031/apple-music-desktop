@@ -2,15 +2,15 @@
 :root.light {
   --bgcolor: #f9f9f9;
   --invert: #1f1f1f;
-  --fontcolor: #000000;
-  --linkcolor: #0000ee;
+  --fontcolor: #000;
+  --linkcolor: #00e;
   --visitedcolor: #551a8b;
 }
 @media (prefers-color-scheme: dark) {
   :root {
     --bgcolor: #1f1f1f;
     --invert: #f9f9f9;
-    --fontcolor: #ffffff;
+    --fontcolor: #fff;
     --linkcolor: #5bf5bf;
     --visitedcolor: #ae5ee0;
   }
@@ -18,7 +18,7 @@
 :root.dark {
   --bgcolor: #1f1f1f;
   --invert: #f9f9f9;
-  --fontcolor: #ffffff;
+  --fontcolor: #fff;
   --linkcolor: #5bf5bf;
   --visitedcolor: #ae5ee0;
 }
@@ -26,7 +26,7 @@
   box-sizing: border-box;
 }
 html {
-  font-family: "Roboto", sans-serif;
+  font-family: Roboto, sans-serif;
 }
 hr {
   background-color: var(--invert);
@@ -34,9 +34,9 @@ hr {
   border: none;
 }
 body {
-  font-family: "Roboto", sans-serif;
+  font-family: Roboto, sans-serif;
   max-width: 80%;
-  margin: auto auto;
+  margin: auto;
   color: var(--fontcolor);
   background-color: var(--bgcolor);
 }
@@ -46,6 +46,7 @@ h2 {
 a:link {
   color: var(--linkcolor);
 }
-a:visited,a:active {
+a:active,
+a:visited {
   color: var(--visitedcolor);
 }

@@ -35,6 +35,7 @@ const isMac = process.platform === 'darwin';
 let mainWindow; // Global Windows object
 let mainActivated; // Global activate? object
 let mainURL; // Global URL destination object
+let mediaIsPlaying; // Global media state object
 let windowTitle; // Global Window title object
 const argsCmd = process.argv; // Global cmdline object.
 
@@ -73,6 +74,7 @@ async function createWindow() {
     icon: isWin ? path.join(__dirname, 'imgs/icon.ico') : path.join(__dirname, 'imgs/icon64.png'),
     darkTheme: store.get('options.useLightMode') ? false : true,
     vibrancy: store.get('options.useLightMode') ? 'light' : 'ultra-dark',
+    autoHideMenuBar: store.get('options.autoHideMenuBar') ? true : false,
     frame: isMac ? true : true,
     webPreferences: {
       nodeIntegration: false,
@@ -104,6 +106,15 @@ async function createWindow() {
     );
   }
 
+  // Detect and set config on null version
+  if (!store.get('version')) {
+    store.set('version', appVersion);
+    store.set('options.windowDetails', true);
+    electronLog.info('Initialized Configuration');
+  } else {
+    store.set('version', appVersion);
+  }
+
   if (store.get('options.useLightMode')) {
     nativeTheme.themeSource = 'light';
   } else {
@@ -128,6 +139,12 @@ async function createWindow() {
     electronLog.warn('Note: Using Beta site');
   }
 
+  // Handler for when the DOM is being unloaded
+  mainWindow.onbeforeunload = (e) => {
+    pauseTrack();
+    e.returnValue = false
+  };
+
   // Emitted when the window is closing
   mainWindow.on('close', () => {
     // If enabled store the window details so they can be restored upon restart
@@ -144,7 +161,11 @@ async function createWindow() {
     pauseTrack();
     store.delete('options.useMiniPlayer');
     electronLog.info('mainWindow.close()');
-    mainWindow.destroy();
+    //mainWindow.destroy();
+  });
+
+  mainWindow.webContents.on('media-started-playing', () => {
+    handleMediaState();
   });
 
   // Emitted when the window is closed.
@@ -230,7 +251,7 @@ app.on('show-from-tray', () => {
   showFromTray();
 });
 
-function handleTray() {
+async function handleTray() {
   try {
     if (store.get('options.disableTray')) {
       return;
@@ -278,7 +299,7 @@ app.on('toggle-miniplayer', () => {
   }
 });
 
-function createPopOutWindow() {
+async function createPopOutWindow() {
   const popoutWindow = new BrowserWindow({
     width: 1024,
     height: 768,
@@ -400,6 +421,26 @@ app.on('restart', () => {
   app.quit();
 });
 
+app.on('relaunch', () => {
+  electronLog.info('Relaunching ' + appName + '...');
+
+  store.set('relaunch.windowDetails', {
+    position: mainWindow.getPosition()
+  });
+
+  // Close Window
+  mainWindow.removeListener('closed', mainWindowClosed);
+
+  // Close App
+  mainWindow.close();
+  mainWindow = undefined;
+
+  // Create a New BrowserWindow
+  handleTray();
+  createWindow();
+  electronLog.info('App relaunched! [ Loading main.js ]');
+});
+
 // Dialog box asking if user really wants to restart app
 app.on('restart-confirm', () => {
     dialog.showMessageBox(mainWindow, {
@@ -473,12 +514,12 @@ function browserDomReady() {
   }
 }
 
-// function playTrack() {
-  // mainWindow.webContents.executeJavaScript(audioControlJS.play());
-// }
+//function playTrack() {
+  //app.emit('play');
+//}
 
 function pauseTrack() {
-  mainWindow.webContents.executeJavaScript(audioControlJS.pause());
+  app.emit('pause');
 }
 
 app.on('get-track-info', () => {
@@ -510,15 +551,26 @@ function mainWindowClosed() {
   mainActivated = null;
 }
 
-// Quit when all windows are closed.
-app.on('window-all-closed', () => {
-  if (process.platform !== 'darwin') {
-    app.quit();
+function handleMediaState() {
+  mediaIsPlaying = true;
+}
+
+app.on('toggle-menubar', () => {
+  if (store.get('options.autoHideMenuBar')) {
+    mainWindow.autoHideMenuBar = true;
+    mainWindow.menuBarVisible = false;
+  } else {
+    mainWindow.autoHideMenuBar = false;
+    mainWindow.menuBarVisible = true;
   }
+  electronLog.info('Note: Changed menu visibility setting');
 });
 
-app.on('before-quit', () => {
-  pauseTrack();
+// Quit when all windows are closed.
+app.on('window-all-closed', () => {
+  //if (process.platform !== 'darwin') {
+    app.quit();
+  //}
 });
 
 app.on('will-quit', () => {
@@ -579,7 +631,6 @@ app.whenReady().then(async() => {
     logAppInfo();
     handleTray();
     createWindow();
-    store.set('version', appVersion);
     electronLog.info('Loading mainURL: ' + mainURL);
   }
 });
