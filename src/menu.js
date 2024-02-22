@@ -16,9 +16,45 @@ const isMac = process.platform === 'darwin';
 module.exports = (app, mainWindow, store) => {
   return Menu.buildFromTemplate([
   {
-    role: 'fileMenu',
+    role: 'appMenu',
     label: appName,
     submenu: [
+      {
+        label: 'About ' + appName,
+        accelerator: 'Cmd+Alt+A',
+        acceleratorWorksWhenHidden: false,
+        visible: isMac ? true : false,
+        click() {
+          const aboutWindow = new BrowserWindow({
+            width: 356,
+            height: 312,
+            useContentSize: true,
+            autoHideMenuBar: true,
+            skipTaskbar: true,
+            title: 'About ' + appName,
+            icon: path.join(__dirname, 'imgs/icon64.png'),
+            darkTheme: store.get('options.useLightMode') ? false : true,
+            webPreferences: {
+              nodeIntegration: false,
+              nodeIntegrationInWorker: false,
+              contextIsolation: false,
+              sandbox: false,
+              experimentalFeatures: true,
+              webviewTag: true,
+              devTools: true,
+              preload: path.join(__dirname, 'preload/preload.js')
+            }
+          });
+          require('@electron/remote/main').enable(aboutWindow.webContents);
+          if (store.get('options.useLightMode')) {
+            nativeTheme.themeSource = 'light';
+          } else {
+            nativeTheme.themeSource = 'dark';
+          }
+          aboutWindow.loadFile('./about.html');
+          electronLog.info('Opened about.html');
+        }
+      },
       {
         label: 'Go Back',
         accelerator: 'Alt+Left',
@@ -436,15 +472,15 @@ module.exports = (app, mainWindow, store) => {
       },
       {
         label: 'About App',
-        accelerator: 'CmdorCtrl+Alt+A',
+        accelerator: 'Ctrl+Alt+A',
         click() {
           const aboutWindow = new BrowserWindow({
-            width: 350,
+            width: 356,
             height: 312,
             useContentSize: true,
             autoHideMenuBar: true,
             skipTaskbar: true,
-            title: 'About App',
+            title: 'About ' + appName,
             icon: isWin ? path.join(__dirname, 'imgs/icon.ico') : path.join(__dirname, 'imgs/icon64.png'),
             darkTheme: store.get('options.useLightMode') ? false : true,
             webPreferences: {
