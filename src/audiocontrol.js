@@ -1,5 +1,4 @@
 global.ipcRenderer = require("electron").ipcRenderer;
-console.log('Loaded audiocontrol.js');
 
 // Audio functions used in the tray. They inject into the webpage
 // but it is also a module that the main process require()s.
