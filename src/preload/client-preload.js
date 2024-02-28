@@ -1,3 +1,4 @@
+/* eslint-disable */
 global.ipcRenderer = require("electron").ipcRenderer;
 console.log('Loaded client-preload.js');
 

@@ -1,4 +1,4 @@
-/* This is injecting into remote webpages to add
+/* This is injected into remote webpages to add
 or remove elements as needed.
 */
 

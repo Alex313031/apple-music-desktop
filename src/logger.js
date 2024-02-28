@@ -1,18 +1,11 @@
 const { app } = require('electron');
-const electronLog = require('electron-log');
 const fs = require('fs');
 const path = require('path');
-const userDataDir = app.getPath('userData');
-const userLogFile = path.join(userDataDir, 'logs/main.log');
-const userOldLogFile = path.join(userDataDir, 'logs/main.log.old');
+const electronLog = require('electron-log');
 
-// Get app version from package.json
+// Get app details
 const appVersion = app.getVersion();
-// Get Electron versions
-const electronVersion = process.versions.electron;
-const chromeVersion = process.versions.chrome;
-const nodeVersion = process.versions.node;
-const v8Version = process.versions.v8;
+const userDataDir = app.getPath('userData');
 
 module.exports.startLogging = (store) => {
   let disableLogging
@@ -21,6 +14,12 @@ module.exports.startLogging = (store) => {
   } else {
     disableLogging = false;
   }
+
+  // Get Electron versions
+  const electronVersion = process.versions.electron;
+  const chromeVersion = process.versions.chrome;
+  const nodeVersion = process.versions.node;
+  const v8Version = process.versions.v8;
 
   if (disableLogging === true) {
     electronLog.warn('Note: Logging is disabled');
@@ -36,14 +35,16 @@ module.exports.startLogging = (store) => {
 };
 
 module.exports.handleLogging = (store) => {
-if (store.get('options.disableLogging')) {
-  electronLog.warn('Note: Logging Disabled');
-  if (fs.existsSync(userLogFile)) {
-    fs.rename(userLogFile, userOldLogFile, () => {
-      console.log('  main.log renamed > main.log.old');
-    });
+  const userLogFile = path.join(userDataDir, 'logs/main.log');
+  const userOldLogFile = path.join(userDataDir, 'logs/main.log.old');
+  if (store.get('options.disableLogging')) {
+    electronLog.warn('Note: Logging Disabled');
+    if (fs.existsSync(userLogFile)) {
+      fs.rename(userLogFile, userOldLogFile, () => {
+        console.log('  main.log renamed > main.log.old');
+      });
+    }
+    electronLog.transports.console.level = false;
+    electronLog.transports.file.level = false;
   }
-  electronLog.transports.console.level = false;
-  electronLog.transports.file.level = false;
-}
 };

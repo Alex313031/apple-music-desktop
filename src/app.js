@@ -128,9 +128,7 @@ async function createWindow() {
   });
   // Inject Header scripts on page load
   mainWindow.webContents.on('did-stop-loading', () => {
-    mainWindow.webContents.executeJavaScript(injectScript);
-    mainWindow.webContents.executeJavaScript(volumeScript);
-    mainWindow.webContents.executeJavaScript(musicKitInit);
+    browserDomReady();
   });
   mainWindow.webContents.on('did-finish-load', () => {
     browserDomReady();
@@ -213,16 +211,6 @@ app.on('change-site', () => {
   mainWindow.on('page-title-updated', function(e) {
     e.preventDefault()
   });
-  mainWindow.webContents.on('did-stop-loading', () => {
-    mainWindow.webContents.executeJavaScript(injectScript);
-    mainWindow.webContents.executeJavaScript(volumeScript);
-    mainWindow.webContents.executeJavaScript(musicKitInit);
-  });
-  mainWindow.webContents.on('did-finish-load', () => {
-    mainWindow.webContents.executeJavaScript(injectScript);
-    mainWindow.webContents.executeJavaScript(volumeScript);
-    mainWindow.webContents.executeJavaScript(musicKitInit);
-  });
 });
 
 function showFromTray() {
@@ -297,29 +285,6 @@ app.on('toggle-miniplayer', () => {
   } else {
     electronLog.info('MiniPlayer disabled');
   }
-});
-
-async function createPopOutWindow() {
-  const popoutWindow = new BrowserWindow({
-    width: 1024,
-    height: 768,
-    title: undefined,
-    useContentSize: true,
-    webPreferences: {
-      nodeIntegration: false,
-      nodeIntegrationInWorker: false,
-      contextIsolation: false,
-      sandbox: true,
-      experimentalFeatures: true,
-      webviewTag: true,
-      devTools: true
-    }
-  });
-  popoutWindow.loadURL('https://www.google.com/');
-}
-
-app.on('popout', () => {
-  createPopOutWindow();
 });
 
 contextMenu({
@@ -532,6 +497,9 @@ app.on('play', () => {
 
 app.on('pause', () => {
   mainWindow.webContents.executeJavaScript(audioControlJS.pause());
+  if (mediaIsPlaying === true) {
+    electronLog.info('Media was playing');
+  }
 });
 
 app.on('play-pause', () => {

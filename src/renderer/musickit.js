@@ -1,11 +1,12 @@
 document.addEventListener('musickitloaded', function() {
-  // MusicKit global is now defined
+  // eslint-disable-next-line
   MusicKit.configure({
     developerToken: 'fricktest',
     app: {
       name: 'apple-music-desktop',
-      build: '2.0.0'
+      build: '2.1.2'
     }
+    // MusicKit global is now defined
   });
   console.log('MusicKit.configure() Suceeded!');
 });
