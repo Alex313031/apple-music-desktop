@@ -365,6 +365,7 @@ module.exports = (app, mainWindow, store) => {
           } else {
             electronLog.info('Opening ' + [ userLogFile ]);
             const logWindow = new BrowserWindow({ width: 600, height: 768, useContentSize: true, title: userLogFile });
+            logWindow.loadFile(userLogFile);
             logWindow.setBounds({ x: secondaryWindowX });
           }
         }
