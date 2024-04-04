@@ -408,24 +408,26 @@ app.on('relaunch', () => {
 
 // Dialog box asking if user really wants to restart app
 app.on('restart-confirm', () => {
-    dialog.showMessageBox(mainWindow, {
-        'type': 'question',
-        'title': 'Restart Confirmation',
-        'message': 'Are you sure you want to restart Apple Music?',
-        'buttons': [
-            'Yes',
-            'No'
-        ]
-    })
-      // Dialog returns a promise so let's handle it correctly
-      .then((result) => {
-          // Bail if the user pressed "No" or escaped (ESC) from the dialog box
-          if (result.response !== 0) { return; }
-          // Testing.
-          if (result.response === 0) {
-              app.emit('restart');
-          }
-      })
+  dialog.showMessageBox(mainWindow, {
+    'type': 'question',
+    'title': 'Restart Confirmation',
+    'message': 'Are you sure you want to restart Apple Music?',
+    'buttons': [
+      'Yes',
+      'No'
+    ]
+  })
+  // Dialog returns a promise so let's handle it correctly
+  .then((result) => {
+    // Bail if the user pressed "No" or escaped (ESC) from the dialog box
+    if (result.response !== 0) {
+      return;
+    }
+    // Testing.
+    if (result.response === 0) {
+      app.emit('restart');
+    }
+  });
 });
 
 ipcMain.handle('finished-preload', () => {
