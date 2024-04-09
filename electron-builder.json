@@ -53,7 +53,7 @@
     ],
     "publisherName": "Alex313031",
     "executableName": "apple_music",
-    "artifactName": "apple_music_win64_${version}_${arch}.${ext}"
+    "artifactName": "apple_music_${version}_${arch}.${ext}"
   },
   "nsis": {
     "shortcutName": "Apple Music",
