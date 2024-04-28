@@ -12,7 +12,9 @@ const store = new Store();
 
 // Initialize Electron remote module
 require('@electron/remote/main').initialize();
+
 // Restrict main.log size to 100Kb
+electronLog.initialize();
 electronLog.transports.file.maxSize = 1024 * 100;
 
 // Load in the header scripts for modifying DOM
