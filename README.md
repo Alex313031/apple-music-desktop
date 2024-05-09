@@ -15,7 +15,7 @@ See the [Releases](https://github.com/Alex313031/apple-music-desktop/releases).
 
 ## Building
 
-Requires nodejs 14, or 16. It is reccomended to use [nvm](https://github.com/nvm-sh/nvm) for installing/managing node versions.
+Requires nodejs 16, or 18. It is reccomended to use [nvm](https://github.com/nvm-sh/nvm) for installing/managing node versions.
 Yarn can also be used.
 
 ```bash
