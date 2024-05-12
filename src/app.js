@@ -246,9 +246,9 @@ async function handleTray() {
     if (store.get('options.disableTray')) {
       return;
     } else {
-      const trayContextMenu = require('./tray.js')
+      const trayContextMenu = require('./tray.js');
       // Set the tray icon and name
-      const trayIcon = isWin ? path.join(__dirname, 'imgs/icon.ico') : path.join(__dirname, 'imgs/icon48.png'),
+      const trayIcon = isWin ? path.join(__dirname, 'imgs/icon.ico') : path.join(__dirname, 'imgs/icon48.png');
       tray = new Tray(trayIcon);
       tray.setToolTip(appName);
       // Create tray menu items

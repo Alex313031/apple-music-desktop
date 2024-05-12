@@ -54,7 +54,7 @@ module.exports = (app, mainWindow, store) => {
         visible: isMac ? true : false,
         click() {
           const aboutWindow = new BrowserWindow({
-            width: 356,
+            width: 352,
             height: 312,
             useContentSize: true,
             autoHideMenuBar: true,

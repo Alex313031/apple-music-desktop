@@ -1,8 +1,19 @@
-const { Menu } = require('electron');
+const { app, Menu } = require('electron');
+const path = require('path');
 const isDev = process.env.NODE_ENV === 'development';
 
 module.exports = (app) => {
+  const appName = app.getName();
+  const appVersion = app.getVersion();
+  const isWin = process.platform === 'win32';
+  const trayIcon = isWin ? path.join(__dirname, 'imgs/icon.ico') : path.join(__dirname, 'imgs/icon48.png');
   return Menu.buildFromTemplate([
+  {
+    label: appName + ' ' + appVersion,
+    icon: trayIcon,
+    enabled: false
+  },
+  { type: 'separator' },
   {
     label: 'Play/Pause',
     click: function() {
