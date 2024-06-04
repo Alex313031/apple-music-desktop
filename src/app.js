@@ -7,6 +7,8 @@ const fs = require('fs');
 const path = require('path');
 const mainMenu = require('./menu.js'); // For making native menu
 const mainLogger = require('./logger.js'); // Misc. logging
+const isDev = process.env.NODE_ENV === 'development';
+
 // Create config.json
 const store = new Store();
 
@@ -161,10 +163,9 @@ async function createWindow() {
       }
     }
     app.emit('pause');
-    mainWindow.webContents.executeJavaScript(`navigator.mediaSession.playbackState = "paused";`);
     store.delete('options.useMiniPlayer');
-    electronLog.info('mainWindow.close()');
-    //mainWindow.destroy();
+    electronLog.info('Closed mainWindow');
+    mainWindow.destroy();
   });
 
   mainWindow.webContents.on('media-started-playing', () => {
@@ -174,6 +175,9 @@ async function createWindow() {
   // Emitted when the window is closed.
   mainWindow.on('closed', () => {
     mainWindowClosed();
+    if (isDev) {
+      electronLog.warn('mainWindowClosed()');
+    }
   });
 }
 
@@ -563,7 +567,7 @@ app.commandLine.appendSwitch('ignore-gpu-blocklist');
 app.commandLine.appendSwitch('enable-gpu-rasterization');
 app.commandLine.appendSwitch('enable-features', 'CSSColorSchemeUARendering,ImpulseScrollAnimations,ParallelDownloading,Portals,StorageBuckets,JXL');
 // Enable remote debugging only if we are in development mode
-if (process.env.NODE_ENV === 'development') {
+if (isDev) {
   const portNumber = '9222'
   app.commandLine.appendSwitch('remote-debugging-port', portNumber);
   electronLog.warn('Remote debugging open on port ' + [ portNumber ]);
