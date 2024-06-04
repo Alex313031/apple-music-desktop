@@ -225,7 +225,9 @@ app.on('change-site', () => {
 function showFromTray() {
     if (mainWindow.isVisible()) {
       mainWindow.focus();
-      electronLog.info('Focused mainWindow');
+      if (!mainWindow.isFocused()) {
+        electronLog.info('Focused mainWindow');
+      }
     } else {
       mainWindow.show();
       electronLog.info('Restored from Tray');
