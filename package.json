@@ -45,7 +45,7 @@
     "electron-builder": "23.6.0",
     "electron-util": "0.17.2",
     "eslint": "8.44.0",
-    "rimraf": "3.0.2",
+    "rimraf": "4.4.1",
     "stylelint": "14.16.1",
     "stylelint-config-standard": "29.0.0"
   },
