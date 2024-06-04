@@ -7,4 +7,5 @@ function reduceVolume() {
 }
 
 reduceVolume();
+
 console.log('electron.renderer: Reduced <video> volume');

@@ -21,12 +21,13 @@ electronLog.transports.file.maxSize = 1024 * 100;
 const injectScript = fs.readFileSync(path.join(__dirname, 'renderer/index.js'), 'utf8');
 const volumeScript = fs.readFileSync(path.join(__dirname, 'renderer/volume.js'), 'utf8');
 const musicKitInit = fs.readFileSync(path.join(__dirname, 'renderer/musickit.js'), 'utf8');
-const trackInfoScript = fs.readFileSync(path.join(__dirname, 'preload/info.js'), 'utf8');
+const trackInfoScript = fs.readFileSync(path.join(__dirname, 'renderer/info.js'), 'utf8');
 
 // Get app details from package.json
-const appVersion = app.getVersion();
 const appName = app.getName();
+const appVersion = app.getVersion();
 
+// Initialize logging (if enabled)
 mainLogger.handleLogging(store);
 
 // Globally export what OS we are on
@@ -34,12 +35,17 @@ const isLinux = process.platform === 'linux';
 const isWin = process.platform === 'win32';
 const isMac = process.platform === 'darwin';
 
-let mainWindow; // Global Windows object
+const argsCmd = process.argv; // Global cmdline object.
+let mainWindow; // Main Window object
+let tray; // OS tray object
 let mainActivated; // Global activate? object
 let mainURL; // Global URL destination object
 let mediaIsPlaying; // Global media state object
 let windowTitle; // Global Window title object
-const argsCmd = process.argv; // Global cmdline object.
+// To be defined later when createTrackDialog() is invoked
+let trackTitle;
+let trackAlbum;
+let trackArtist;
 
 if (store.get('options.useBetaSite')) {
   if (store.get('options.useBrowse')) {
@@ -84,7 +90,6 @@ async function createWindow() {
       contextIsolation: false,
       sandbox: true,
       experimentalFeatures: true,
-      webviewTag: true,
       devTools: true,
       preload: path.join(__dirname, 'preload/client-preload.js')
     }
@@ -126,13 +131,10 @@ async function createWindow() {
   // Load the index.html or webpage of the app.
   mainWindow.loadURL(mainURL);
   mainWindow.on('page-title-updated', function(e) {
-    e.preventDefault()
+    e.preventDefault();
   });
   // Inject Header scripts on page load
   mainWindow.webContents.on('did-stop-loading', () => {
-    browserDomReady();
-  });
-  mainWindow.webContents.on('did-finish-load', () => {
     browserDomReady();
   });
   if (mainURL === 'https://beta.music.apple.com/') {
@@ -141,7 +143,7 @@ async function createWindow() {
 
   // Handler for when the DOM is being unloaded
   mainWindow.onbeforeunload = (e) => {
-    pauseTrack();
+    app.emit('pause');
     e.returnValue = false
   };
 
@@ -158,7 +160,8 @@ async function createWindow() {
         electronLog.error('Error: mainWindow was not defined while trying to save windowDetails.');
       }
     }
-    pauseTrack();
+    app.emit('pause');
+    mainWindow.webContents.executeJavaScript(`navigator.mediaSession.playbackState = "paused";`);
     store.delete('options.useMiniPlayer');
     electronLog.info('mainWindow.close()');
     //mainWindow.destroy();
@@ -211,26 +214,27 @@ app.on('change-site', () => {
   mainWindow.loadURL(mainURL);
   mainWindow.setTitle(windowTitle);
   mainWindow.on('page-title-updated', function(e) {
-    e.preventDefault()
+    e.preventDefault();
   });
 });
 
 function showFromTray() {
-  if (isLinux) {
-    mainWindow.show();
-  } else {
     if (mainWindow.isVisible()) {
       mainWindow.focus();
+      electronLog.info('Focused mainWindow');
     } else {
       mainWindow.show();
+      electronLog.info('Restored from Tray');
     }
-  }
-  electronLog.info('Restored from Tray');
 }
 
 function minimizeToTray() {
-  mainWindow.hide();
-  electronLog.info('Minimized to Tray');
+  if (mainWindow.isVisible()) {
+    mainWindow.hide();
+    electronLog.info('Minimized to Tray');
+  } else {
+    electronLog.info('mainWindow already minimized to Tray');
+  }
 }
 
 app.on('minimize-to-tray', () => {
@@ -259,6 +263,9 @@ async function handleTray() {
     }
   } catch (error) {
     electronLog.error('handleTray() failed: ' + error);
+    if (isLinux) {
+      electronLog.warn('Note: Some Linux distros lack a tray');
+    }
   }
 }
 
@@ -425,7 +432,7 @@ app.on('restart-confirm', () => {
     if (result.response !== 0) {
       return;
     }
-    // Testing.
+    // Continue emitting the restart
     if (result.response === 0) {
       app.emit('restart');
     }
@@ -436,38 +443,34 @@ ipcMain.handle('finished-preload', () => {
   electronLog.info('[ electron:preload ] IPC Listeners Created');
 });
 
-ipcMain.on('track-name', (event, trackName) => {
-  electronLog.info('Now Playing: ' + trackName)
-  function createTrackWindow() {
-    const trackWindow = new BrowserWindow({
-      width: 400,
-      height: 400,
-      useContentSize: true,
-      title: 'Current Track Info',
-      icon: isWin ? path.join(__dirname, 'imgs/icon.ico') : path.join(__dirname, 'imgs/icon64.png'),
-      darkTheme: store.get('options.useLightMode') ? false : true,
-      webPreferences: {
-        nodeIntegration: false,
-        nodeIntegrationInWorker: false,
-        contextIsolation: false,
-        sandbox: false,
-        experimentalFeatures: true,
-        webviewTag: true,
-        devTools: true,
-        preload: path.join(__dirname, 'preload/info.js')
-      }
-    });
-    require('@electron/remote/main').enable(trackWindow.webContents);
-    if (store.get('options.useLightMode')) {
-      nativeTheme.themeSource = 'light';
-    } else {
-      nativeTheme.themeSource = 'dark';
-    }
-    trackWindow.loadFile('./index.html');
-    trackWindow.webContents.executeJavaScript(trackInfoScript);
+ipcMain.on('track-name', (event, trackName, trackAlbumName, trackArtistName) => {
+  trackTitle = trackName;
+  trackAlbum = trackAlbumName;
+  trackArtist = trackArtistName;
+  // Print currently playing song to the terminal
+  if (trackName == 'NOTRACK') {
+    electronLog.info('Track is not playing');
+  } else {
+    electronLog.info('Now Playing: ' + trackTitle);
   }
-  createTrackWindow();
+  const trackInfo = [
+    'Currently playing Track is: ' + trackTitle,
+    '',
+    'From Album: ' + trackAlbum,
+    '',
+    'By Artist: ' + trackArtist
+  ];
+  dialog.showMessageBox({
+    type: 'info',
+    title: 'Now Playing Info',
+    message: trackInfo.join('\n'),
+    buttons: ['Ok']
+  });
 });
+
+function createTrackDialog() {
+  mainWindow.webContents.executeJavaScript(trackInfoScript);
+}
 
 // This method is called when the BrowserWindow's DOM is ready
 // it is used to inject the index.js into the webpage.
@@ -483,16 +486,9 @@ function browserDomReady() {
   }
 }
 
-//function playTrack() {
-  //app.emit('play');
-//}
-
-function pauseTrack() {
-  app.emit('pause');
-}
-
 app.on('get-track-info', () => {
   mainWindow.webContents.executeJavaScript(audioControlJS.getInfo());
+  createTrackDialog();
 });
 
 app.on('play', () => {
@@ -520,6 +516,7 @@ app.on('previous-track', () => {
 
 // Run when window is closed. This cleans up the mainWindow object to save resources.
 function mainWindowClosed() {
+  mainWindow = null;
   mainActivated = null;
 }
 
@@ -583,9 +580,7 @@ function rejectEvent(event) {
 }
 
 /* Restrict certain Electron APIs in the renderer process for security */
-app.on('remote-require', rejectEvent);
 app.on('remote-get-current-window', rejectEvent);
-app.on('remote-get-current-web-contents', rejectEvent);
 app.on('remote-get-guest-web-contents', rejectEvent);
 
 // Fire it up
@@ -598,8 +593,6 @@ app.whenReady().then(async() => {
   } else {
     // Initialize Widevine
     await components.whenReady();
-    electronLog.info('Welcome to ' + appName + ' Desktop!');
-    electronLog.info('WidevineCDM component ready.');
     logAppInfo();
     handleTray();
     createWindow();

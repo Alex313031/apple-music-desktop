@@ -30,10 +30,9 @@ module.exports = (app, mainWindow, store) => {
       webPreferences: {
         nodeIntegration: false,
         nodeIntegrationInWorker: false,
-        contextIsolation: false,
+        contextIsolation: true,
         sandbox: true,
         experimentalFeatures: true,
-        webviewTag: true,
         devTools: true
       }
     });
@@ -49,35 +48,9 @@ module.exports = (app, mainWindow, store) => {
     submenu: [
       {
         label: 'About ' + appName,
-        accelerator: 'Cmd+Alt+A',
         acceleratorWorksWhenHidden: false,
         visible: isMac ? true : false,
-        click() {
-          const aboutWindow = new BrowserWindow({
-            width: 352,
-            height: 312,
-            useContentSize: true,
-            autoHideMenuBar: true,
-            skipTaskbar: true,
-            title: 'About ' + appName,
-            icon: path.join(__dirname, 'imgs/icon64.png'),
-            darkTheme: store.get('options.useLightMode') ? false : true,
-            webPreferences: {
-              nodeIntegration: false,
-              nodeIntegrationInWorker: false,
-              contextIsolation: false,
-              sandbox: false,
-              experimentalFeatures: true,
-              webviewTag: true,
-              devTools: true,
-              preload: path.join(__dirname, 'preload/preload.js')
-            }
-          });
-          require('@electron/remote/main').enable(aboutWindow.webContents);
-          aboutWindow.loadFile('./about.html');
-          aboutWindow.setBounds({ x: secondaryWindowX });
-          electronLog.info('Opened about.html');
-        }
+        role: 'about'
       },
       {
         label: 'Go Back',
@@ -523,9 +496,8 @@ module.exports = (app, mainWindow, store) => {
               contextIsolation: false,
               sandbox: false,
               experimentalFeatures: true,
-              webviewTag: true,
               devTools: true,
-              preload: path.join(__dirname, 'preload/preload.js')
+              preload: path.join(__dirname, 'preload/about-preload.js')
             }
           });
           require('@electron/remote/main').enable(aboutWindow.webContents);

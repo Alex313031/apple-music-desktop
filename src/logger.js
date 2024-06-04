@@ -4,27 +4,22 @@ const path = require('path');
 const electronLog = require('electron-log');
 
 // Get app details
+const appName = app.getName();
 const appVersion = app.getVersion();
 const userDataDir = app.getPath('userData');
+// Get Electron versions
+const electronVersion = process.versions.electron;
+const chromeVersion = process.versions.chrome;
+const nodeVersion = process.versions.node;
+const v8Version = process.versions.v8;
 
 module.exports.startLogging = (store) => {
-  let disableLogging
   if (store.get('options.disableLogging')) {
-    disableLogging = true;
-  } else {
-    disableLogging = false;
-  }
-
-  // Get Electron versions
-  const electronVersion = process.versions.electron;
-  const chromeVersion = process.versions.chrome;
-  const nodeVersion = process.versions.node;
-  const v8Version = process.versions.v8;
-
-  if (disableLogging === true) {
-    electronLog.warn('Note: Logging is disabled');
+    console.info('App Version: ' + [ appVersion ]);
   } else {
     // I'm a Log freak, can you tell?
+    electronLog.info('Welcome to ' + appName + ' Desktop!');
+    electronLog.info('WidevineCDM component ready.');
     electronLog.info('App Version: ' + [ appVersion ]);
     electronLog.info('Electron Version: ' + [ electronVersion ]);
     electronLog.info('Chromium Version: ' + [ chromeVersion ]);
@@ -38,7 +33,7 @@ module.exports.handleLogging = (store) => {
   const userLogFile = path.join(userDataDir, 'logs/main.log');
   const userOldLogFile = path.join(userDataDir, 'logs/main.log.old');
   if (store.get('options.disableLogging')) {
-    electronLog.warn('Note: Logging Disabled');
+    console.warn('Note: Logging is disabled');
     if (fs.existsSync(userLogFile)) {
       fs.rename(userLogFile, userOldLogFile, () => {
         console.log('  main.log renamed > main.log.old');

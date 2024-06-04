@@ -4,10 +4,11 @@ document.addEventListener('musickitloaded', function() {
     developerToken: 'fricktest',
     app: {
       name: 'apple-music-desktop',
-      build: '2.1.2'
+      build: '2.1.5'
     }
     // MusicKit global is now defined
   });
   console.log('MusicKit.configure() Suceeded!');
 });
+
 console.log('electron-renderer: musickit loaded!');

@@ -1,6 +1,5 @@
-const { app, Menu } = require('electron');
+const { Menu } = require('electron');
 const path = require('path');
-const isDev = process.env.NODE_ENV === 'development';
 
 module.exports = (app) => {
   const appName = app.getName();
@@ -16,26 +15,26 @@ module.exports = (app) => {
   { type: 'separator' },
   {
     label: 'Play/Pause',
-    click: function() {
+    click() {
       app.emit('play-pause');
     }
   },
   {
     label: 'Next Track',
-    click: function() {
+    click() {
       app.emit('next-track');
     }
   },
   {
     label: 'Previous Track',
-    click: function() {
+    click() {
       app.emit('previous-track');
     }
   },
   {
     label: 'Get Info',
-    visible: isDev,
-    click: function() {
+    visible: true,
+    click() {
       app.emit('get-track-info');
     }
   },
@@ -43,20 +42,20 @@ module.exports = (app) => {
   {
     label: 'Show',
     visible: true,
-    click: function() {
+    click() {
       app.emit('show-from-tray');
     }
   },
   {
     label: 'Minimize to Tray',
-    click: function() {
+    click() {
       app.emit('minimize-to-tray');
     }
   },
   {
     label: 'Quit',
     role: 'quit',
-    click: function() {
+    click() {
       app.quit();
     }
   }
