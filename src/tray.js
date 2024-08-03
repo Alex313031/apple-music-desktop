@@ -1,15 +1,30 @@
-const { Menu } = require('electron');
+const { Menu, nativeImage } = require('electron');
 const path = require('path');
 
 module.exports = (app) => {
   const appName = app.getName();
   const appVersion = app.getVersion();
   const isWin = process.platform === 'win32';
-  const trayIcon = isWin ? path.join(__dirname, 'imgs/icon.ico') : path.join(__dirname, 'imgs/icon48.png');
+  const isLinux = process.platform === 'linux';
+  const isMac = process.platform === 'darwin';
+  const trayImage = isWin ? path.join(__dirname, 'imgs/icon.ico') : path.join(__dirname, 'imgs/icon48.png');
+  const trayIcon = nativeImage.createFromPath(trayImage);
+  const getTrayMenuIcon = () => {
+    if (isWin) {
+        return trayIcon.resize({height: 16});
+    } else if (isLinux) {
+        return trayIcon.resize({height: 24});
+    } else if (isMac) {
+        return trayIcon.resize({height: 22});
+    } else {
+        return trayIcon;
+        electronLog.info('Running on BSD');
+    }
+  };
   return Menu.buildFromTemplate([
   {
     label: appName + ' ' + appVersion,
-    icon: trayIcon,
+    icon: getTrayMenuIcon(),
     enabled: false
   },
   { type: 'separator' },

@@ -165,6 +165,9 @@ async function createWindow() {
     app.emit('pause');
     store.delete('options.useMiniPlayer');
     electronLog.info('Closed mainWindow');
+    if (tray) {
+     // tray.destroy();
+    }
     mainWindow.destroy();
   });
 

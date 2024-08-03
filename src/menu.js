@@ -482,8 +482,8 @@ module.exports = (app, mainWindow, store) => {
         accelerator: 'Ctrl+Alt+A',
         click() {
           const aboutWindow = new BrowserWindow({
-            width: 356,
-            height: 312,
+            width: 358,
+            height: 314,
             useContentSize: true,
             autoHideMenuBar: true,
             skipTaskbar: true,
