@@ -149,26 +149,34 @@ async function createWindow() {
     e.returnValue = false
   };
 
-  // Emitted when the window is closing
-  mainWindow.on('close', () => {
-    // If enabled store the window details so they can be restored upon restart
-    if (store.get('options.windowDetails')) {
-      if (mainWindow) {
-        store.set('options.windowDetails', {
-          position: mainWindow.getPosition()
-        });
-        electronLog.info('Saved windowDetails.');
-      } else {
-        electronLog.error('Error: mainWindow was not defined while trying to save windowDetails.');
-      }
-    }
-    app.emit('pause');
-    store.delete('options.useMiniPlayer');
-    electronLog.info('Closed mainWindow');
-    if (tray) {
-     // tray.destroy();
-    }
-    mainWindow.destroy();
+	// Emitted when the window is closing
+	mainWindow.on('close', (e) => {
+		// If we have a tray icon, hide the window rather than closing properly,
+		// unless we've received an explicit quit signal.
+		if (!store.get('options.disableTray') && !explicitQuit) {
+			// Intercept the default close event, and minimize instead.
+			e.preventDefault();
+			minimizeToTray(); 
+		} else {
+			// If enabled store the window details so they can be restored upon restart
+			if (store.get('options.windowDetails')) {
+				if (mainWindow) {
+					store.set('options.windowDetails', {
+						position: mainWindow.getPosition()
+					});
+					electronLog.info('Saved windowDetails.');
+				} else {
+					electronLog.error('Error: mainWindow was not defined while trying to save windowDetails.');
+				}
+			}
+			app.emit('pause');
+			store.delete('options.useMiniPlayer');
+			electronLog.info('Closed mainWindow');
+			if (tray) {
+				// tray.destroy();
+			}
+			mainWindow.destroy();
+		}
   });
 
   mainWindow.webContents.on('media-started-playing', () => {
@@ -521,6 +529,12 @@ app.on('next-track', () => {
 
 app.on('previous-track', () => {
   mainWindow.webContents.executeJavaScript(audioControlJS.previousTrack());
+});
+
+// Allow quitting explicitly to close the window, even if there is a system tray icon.
+var explicitQuit = false;
+app.on('before-quit', () => {
+	explicitQuit = true;
 });
 
 // Run when window is closed. This cleans up the mainWindow object to save resources.
