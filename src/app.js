@@ -233,6 +233,16 @@ app.on('change-site', () => {
   });
 });
 
+// Toggle showing and hiding the main window based on visibility.
+// (Designed to be called from clicking on the tray icon.)
+function toggleMinimizedToTray() {
+	if (mainWindow.isVisible()) {
+		minimizeToTray();
+	} else {
+		showFromTray();
+	}
+}
+
 function showFromTray() {
     if (mainWindow.isVisible()) {
       mainWindow.focus();
@@ -275,7 +285,7 @@ async function handleTray() {
       // Create tray menu items
       tray.setContextMenu(trayContextMenu(app))
       tray.on('click', () => {
-        tray.popUpContextMenu();
+        toggleMinimizedToTray();
       });
     }
   } catch (error) {
