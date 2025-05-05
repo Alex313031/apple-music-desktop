@@ -571,6 +571,7 @@ app.commandLine.appendSwitch('enable-ui-devtools');
 app.commandLine.appendSwitch('ignore-gpu-blocklist');
 app.commandLine.appendSwitch('enable-gpu-rasterization');
 app.commandLine.appendSwitch('enable-features', 'CSSColorSchemeUARendering,ImpulseScrollAnimations,ParallelDownloading,Portals,StorageBuckets,JXL');
+app.commandLine.appendSwitch('disable-features', 'ChromeRefresh2023,ChromeRefreshSecondary2023,CustomizeChromeSidePanel,ChromeWebuiRefresh2023');
 // Enable remote debugging only if we are in development mode
 if (isDev) {
   const portNumber = '9222'

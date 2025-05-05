@@ -1,6 +1,6 @@
 ## apple-music-desktop humans.txt ##
 
-# Copyright (c) 2024 Alex313031.
+# Copyright (c) 2025 Alex313031.
 # https://humanstxt.org/
 
 /* ABOUT */
@@ -22,7 +22,7 @@
 
 /* WEBPAGE */
 
-	Last update: 2024/09/04
+	Last update: 2025/05/05
 	Language: English
 	Doctype: HTML5, CSS, WebGL
 	IDE: Geany

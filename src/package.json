@@ -3,15 +3,15 @@
   "appName": "Apple Music",
   "productName": "Apple Music",
   "applicationId": "com.alex313031.apple-music-desktop",
-  "version": "2.1.6",
+  "version": "2.2.0",
   "description": "An Electron app that provides a native Apple Music experience for Linux & Windows.",
   "author": "Alex313031",
   "license": "BSD-3-Clause",
-  "copyright": "Copyright © 2024 Alex313031",
+  "copyright": "Copyright © 2025 Alex313031",
   "repository": "https://github.com/Alex313031/apple-music-desktop",
   "main": "./app.js",
   "engines": {
-    "node": ">=16"
+    "node": ">=18"
   },
   "scripts": {
     "test": "echo \"Error: No test specified\" && exit 1",
@@ -28,7 +28,7 @@
   },
   "devDependencies": {
     "asar": "3.2.0",
-    "electron": "git+https://github.com/castlabs/electron-releases#v28.3.3+wvcus",
+    "electron": "git+https://github.com/castlabs/electron-releases#v30.5.1+wvcus",
     "electron-builder": "23.6.0",
     "electron-util": "0.17.2",
     "eslint": "8.44.0",
@@ -37,6 +37,6 @@
     "stylelint-config-standard": "29.0.0"
   },
   "resolutions": {
-    "electron": "git+https://github.com/castlabs/electron-releases#v28.3.3+wvcus"
+    "electron": "git+https://github.com/castlabs/electron-releases#v30.5.1+wvcus"
   }
 }

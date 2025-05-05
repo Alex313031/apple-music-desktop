@@ -1,13 +1,13 @@
 {
-  "electronVersion": "28.3.3",
+  "electronVersion": "30.5.1",
   "electronDownload": {
-    "version": "28.3.3+wvcus",
+    "version": "30.5.1+wvcus",
     "mirror": "https://github.com/castlabs/electron-releases/releases/download/v"
   },
   "asar": true,
   "productName": "Apple Music",
   "appId": "com.alex313031.apple-music-desktop",
-  "copyright": "Copyright © 2024 Alex313031",
+  "copyright": "Copyright © 2025 Alex313031",
   "generateUpdatesFilesForAllChannels": false,
   "directories": {
       "app": "src",

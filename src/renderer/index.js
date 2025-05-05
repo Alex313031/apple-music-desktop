@@ -1,6 +1,5 @@
 /* This is injected into webpages to add
-or remove elements as needed.
-*/
+or remove elements as needed. */
 
 /* Clean up the "Open in Music" div */
 function removeElementsByClass() {
