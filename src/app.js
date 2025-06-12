@@ -1,4 +1,4 @@
-const { app, BrowserWindow, components, dialog, ipcMain, Menu, nativeTheme, Tray } = require('electron');
+const { app, BrowserWindow, session, ipcMain, Menu, nativeTheme } = require('electron');
 const electronLog = require('electron-log');
 const contextMenu = require('electron-context-menu');
 const Store = require('electron-store');
@@ -594,18 +594,16 @@ app.on('remote-get-current-window', rejectEvent);
 app.on('remote-get-guest-web-contents', rejectEvent);
 
 // Fire it up
-app.whenReady().then(async() => {
-  if (argsCmd.includes('--cdm-info')) {
-    await components.whenReady();
-    console.log('WidevineCDM Component Info:\n');
-    console.log(components.status());
-    app.quit();
-  } else {
-    // Initialize Widevine
-    await components.whenReady();
-    logAppInfo();
-    handleTray();
-    createWindow();
-    electronLog.info('Loading mainURL: ' + mainURL);
-  }
+app.whenReady().then(async () => {
+  // if (argsCmd.includes('--cdm-info')) {
+  //   await components.whenReady();
+  //   console.log('WidevineCDM Component Info:\n');
+  //   console.log(components.status());
+  //   app.quit();
+  // } else {
+      logAppInfo();
+      handleTray();
+      createWindow();
+      electronLog.info('Loading mainURL: ' + mainURL);
+  // }
 });
