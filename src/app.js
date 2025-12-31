@@ -83,14 +83,14 @@ async function createWindow() {
     useContentSize: true,
     icon: isWin ? path.join(__dirname, 'imgs/icon.ico') : path.join(__dirname, 'imgs/icon64.png'),
     darkTheme: store.get('options.useLightMode') ? false : true,
-    vibrancy: store.get('options.useLightMode') ? 'light' : 'ultra-dark',
+    // vibrancy: store.get('options.useLightMode') ? 'light' : 'ultra-dark',
     autoHideMenuBar: store.get('options.autoHideMenuBar') ? true : false,
     frame: isMac ? true : true,
     webPreferences: {
       nodeIntegration: false,
       nodeIntegrationInWorker: false,
       contextIsolation: false,
-      sandbox: true,
+      sandbox: false,
       experimentalFeatures: true,
       devTools: true,
       preload: path.join(__dirname, 'preload/client-preload.js')
@@ -132,7 +132,7 @@ async function createWindow() {
 
   // Load the index.html or webpage of the app.
   mainWindow.loadURL(mainURL);
-  mainWindow.on('page-title-updated', function(e) {
+  mainWindow.on('page-title-updated', function (e) {
     e.preventDefault();
   });
   // Inject Header scripts on page load
@@ -166,7 +166,7 @@ async function createWindow() {
     store.delete('options.useMiniPlayer');
     electronLog.info('Closed mainWindow');
     if (tray) {
-     // tray.destroy();
+      // tray.destroy();
     }
     mainWindow.destroy();
   });
@@ -220,21 +220,21 @@ app.on('change-site', () => {
   electronLog.warn(logMessage);
   mainWindow.loadURL(mainURL);
   mainWindow.setTitle(windowTitle);
-  mainWindow.on('page-title-updated', function(e) {
+  mainWindow.on('page-title-updated', function (e) {
     e.preventDefault();
   });
 });
 
 function showFromTray() {
-    if (mainWindow.isVisible()) {
-      mainWindow.focus();
-      if (!mainWindow.isFocused()) {
-        electronLog.info('Focused mainWindow');
-      }
-    } else {
-      mainWindow.show();
-      electronLog.info('Restored from Tray');
+  if (mainWindow.isVisible()) {
+    mainWindow.focus();
+    if (!mainWindow.isFocused()) {
+      electronLog.info('Focused mainWindow');
     }
+  } else {
+    mainWindow.show();
+    electronLog.info('Restored from Tray');
+  }
 }
 
 function minimizeToTray() {
@@ -318,73 +318,73 @@ contextMenu({
   showLookUpSelection: true,
   showSearchWithGoogle: true,
   prepend: (defaultActions, parameters) => [
-  {
-    label: 'Open Link in New Window',
-    // Only show it when right-clicking a link
-    visible: parameters.linkURL.trim().length > 0,
-    click: () => {
-      const toURL = parameters.linkURL;
-      const linkWin = new BrowserWindow({
-        title: 'New Window',
-        width: 1024,
-        height: 700,
-        useContentSize: true,
-        darkTheme: store.get('options.useLightMode') ? false : true,
-        webPreferences: {
-          nodeIntegration: false,
-          nodeIntegrationInWorker: false,
-          experimentalFeatures: true,
-          devTools: true
-        }
-      });
-      linkWin.loadURL(toURL);
-      electronLog.info('Opened Link in New Window');
-    }
-  },
-  {
-    label: 'Open Image in New Window',
-    // Only show it when right-clicking an image
-    visible: parameters.mediaType === 'image',
-    click: () => {
-      const imgURL = parameters.srcURL;
-      const imgTitle = imgURL.substring(imgURL.lastIndexOf('/') + 1);
-      const imgWin = new BrowserWindow({
-        title: imgTitle,
-        useContentSize: true,
-        darkTheme: store.get('options.useLightMode') ? false : true,
-        webPreferences: {
-          nodeIntegration: false,
-          nodeIntegrationInWorker: false,
-          experimentalFeatures: true,
-          devTools: true
-        }
-      });
-      imgWin.loadURL(imgURL);
-      electronLog.info('Opened Image in New Window');
-    }
-  },
-  {
-    label: 'Open Video in New Window',
-    // Only show it when right-clicking a video
-    visible: parameters.mediaType === 'video',
-    click: () => {
-      const vidURL = parameters.srcURL;
-      const vidTitle = vidURL.substring(vidURL.lastIndexOf('/') + 1);
-      const vidWin = new BrowserWindow({
-        title: vidTitle,
-        useContentSize: true,
-        darkTheme: store.get('options.useLightMode') ? false : true,
-        webPreferences: {
-          nodeIntegration: false,
-          nodeIntegrationInWorker: false,
-          experimentalFeatures: true,
-          devTools: true
-        }
-      });
-      vidWin.loadURL(vidURL);
-      electronLog.info('Popped out Video');
-    }
-  }]
+    {
+      label: 'Open Link in New Window',
+      // Only show it when right-clicking a link
+      visible: parameters.linkURL.trim().length > 0,
+      click: () => {
+        const toURL = parameters.linkURL;
+        const linkWin = new BrowserWindow({
+          title: 'New Window',
+          width: 1024,
+          height: 700,
+          useContentSize: true,
+          darkTheme: store.get('options.useLightMode') ? false : true,
+          webPreferences: {
+            nodeIntegration: false,
+            nodeIntegrationInWorker: false,
+            experimentalFeatures: true,
+            devTools: true
+          }
+        });
+        linkWin.loadURL(toURL);
+        electronLog.info('Opened Link in New Window');
+      }
+    },
+    {
+      label: 'Open Image in New Window',
+      // Only show it when right-clicking an image
+      visible: parameters.mediaType === 'image',
+      click: () => {
+        const imgURL = parameters.srcURL;
+        const imgTitle = imgURL.substring(imgURL.lastIndexOf('/') + 1);
+        const imgWin = new BrowserWindow({
+          title: imgTitle,
+          useContentSize: true,
+          darkTheme: store.get('options.useLightMode') ? false : true,
+          webPreferences: {
+            nodeIntegration: false,
+            nodeIntegrationInWorker: false,
+            experimentalFeatures: true,
+            devTools: true
+          }
+        });
+        imgWin.loadURL(imgURL);
+        electronLog.info('Opened Image in New Window');
+      }
+    },
+    {
+      label: 'Open Video in New Window',
+      // Only show it when right-clicking a video
+      visible: parameters.mediaType === 'video',
+      click: () => {
+        const vidURL = parameters.srcURL;
+        const vidTitle = vidURL.substring(vidURL.lastIndexOf('/') + 1);
+        const vidWin = new BrowserWindow({
+          title: vidTitle,
+          useContentSize: true,
+          darkTheme: store.get('options.useLightMode') ? false : true,
+          webPreferences: {
+            nodeIntegration: false,
+            nodeIntegrationInWorker: false,
+            experimentalFeatures: true,
+            devTools: true
+          }
+        });
+        vidWin.loadURL(vidURL);
+        electronLog.info('Popped out Video');
+      }
+    }]
 });
 
 // Full restart, quitting Electron.
@@ -435,17 +435,17 @@ app.on('restart-confirm', () => {
       'No'
     ]
   })
-  // Dialog returns a promise so let's handle it correctly
-  .then((result) => {
-    // Bail if the user pressed "No" or escaped (ESC) from the dialog box
-    if (result.response !== 0) {
-      return;
-    }
-    // Continue emitting the restart
-    if (result.response === 0) {
-      app.emit('restart');
-    }
-  });
+    // Dialog returns a promise so let's handle it correctly
+    .then((result) => {
+      // Bail if the user pressed "No" or escaped (ESC) from the dialog box
+      if (result.response !== 0) {
+        return;
+      }
+      // Continue emitting the restart
+      if (result.response === 0) {
+        app.emit('restart');
+      }
+    });
 });
 
 ipcMain.handle('finished-preload', () => {
@@ -547,7 +547,7 @@ app.on('toggle-menubar', () => {
 // Quit when all windows are closed.
 app.on('window-all-closed', () => {
   //if (process.platform !== 'darwin') {
-    app.quit();
+  app.quit();
   //}
 });
 
@@ -568,15 +568,15 @@ app.on('activate', () => {
 app.commandLine.appendSwitch('enable-local-file-accesses');
 app.commandLine.appendSwitch('enable-quic');
 app.commandLine.appendSwitch('enable-ui-devtools');
-app.commandLine.appendSwitch('ignore-gpu-blocklist');
-app.commandLine.appendSwitch('enable-gpu-rasterization');
-app.commandLine.appendSwitch('enable-features', 'CSSColorSchemeUARendering,ImpulseScrollAnimations,ParallelDownloading,Portals,StorageBuckets,JXL');
+// app.commandLine.appendSwitch('ignore-gpu-blocklist');
+// app.commandLine.appendSwitch('enable-gpu-rasterization');
+// app.commandLine.appendSwitch('enable-features', 'CSSColorSchemeUARendering,ImpulseScrollAnimations,ParallelDownloading,Portals,StorageBuckets,JXL');
 app.commandLine.appendSwitch('disable-features', 'ChromeRefresh2023,ChromeRefreshSecondary2023,CustomizeChromeSidePanel,ChromeWebuiRefresh2023');
 // Enable remote debugging only if we are in development mode
 if (isDev) {
   const portNumber = '9222'
   app.commandLine.appendSwitch('remote-debugging-port', portNumber);
-  electronLog.warn('Remote debugging open on port ' + [ portNumber ]);
+  electronLog.warn('Remote debugging open on port ' + [portNumber]);
 }
 
 // I'm a Log freak, can you tell?
@@ -594,7 +594,7 @@ app.on('remote-get-current-window', rejectEvent);
 app.on('remote-get-guest-web-contents', rejectEvent);
 
 // Fire it up
-app.whenReady().then(async() => {
+app.whenReady().then(async () => {
   if (argsCmd.includes('--cdm-info')) {
     await components.whenReady();
     console.log('WidevineCDM Component Info:\n');
@@ -602,7 +602,7 @@ app.whenReady().then(async() => {
     app.quit();
   } else {
     // Initialize Widevine
-    await components.whenReady();
+    // await components.whenReady();
     logAppInfo();
     handleTray();
     createWindow();
