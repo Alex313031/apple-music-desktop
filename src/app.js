@@ -108,13 +108,13 @@ async function createWindow() {
   // Reset the Window's size and location
   const windowDetails = store.get('options.windowDetails');
   const relaunchWindowDetails = store.get('relaunch.windowDetails');
-  if (relaunchWindowDetails) {
+  if (relaunchWindowDetails && Array.isArray(relaunchWindowDetails.position)) {
     mainWindow.setPosition(
       relaunchWindowDetails.position[0],
       relaunchWindowDetails.position[1]
     );
     store.delete('relaunch.windowDetails');
-  } else if (windowDetails) {
+  } else if (windowDetails && Array.isArray(windowDetails.position)) {
     mainWindow.setPosition(
       windowDetails.position[0],
       windowDetails.position[1]
@@ -607,13 +607,21 @@ app.on('remote-get-guest-web-contents', rejectEvent);
 // Fire it up
 app.whenReady().then(async() => {
   if (argsCmd.includes('--cdm-info')) {
-    await components.whenReady();
-    console.log('WidevineCDM Component Info:\n');
-    console.log(components.status());
+    try {
+      await components.whenReady();
+      console.log('WidevineCDM Component Info:\n');
+      console.log(components.status());
+    } catch (err) {
+      console.error('Failed to get WidevineCDM component info:', err);
+    }
     app.quit();
   } else {
     // Initialize Widevine
-    await components.whenReady();
+    try {
+      await components.whenReady();
+    } catch (err) {
+      electronLog.warn('Failed to install components:', err);
+    }
     logAppInfo();
     handleTray();
     createWindow();
