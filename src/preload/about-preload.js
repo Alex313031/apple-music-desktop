@@ -1,24 +1,9 @@
-const Os = require('os');
-const remote = require('@electron/remote');
+const { ipcRenderer } = require('electron');
 
 // Globally export what OS we are on
 const isLinux = process.platform === 'linux';
 const isWin = process.platform === 'win32';
 const isMac = process.platform === 'darwin';
-
-// Show version numbers of bundled Electron.
-window.addEventListener('DOMContentLoaded', () => {
-  const replaceText = (selector, text) => {
-    const element = document.getElementById(selector)
-    if (element) element.innerText = text
-  }
-  for (const dependency of ['electron', 'chrome', 'node', 'v8']) {
-    replaceText(`${dependency}-version`, process.versions[dependency])
-  }
-});
-
-// Get app version from package.json
-const appVersion = remote.app.getVersion();
 
 let osType;
 if (isLinux) {
@@ -30,17 +15,20 @@ if (isLinux) {
 } else {
   osType = 'BSD';
 }
-const archType = Os.arch();
 
-// Show app version in about.html
-window.addEventListener('DOMContentLoaded', () => {
+// Show app version, OS info and version numbers of bundled Electron in about.html
+window.addEventListener('DOMContentLoaded', async () => {
   const replaceText = (selector, text) => {
     const element = document.getElementById(selector)
     if (element) element.innerText = text
   }
-  replaceText('app-version', appVersion);
+  for (const dependency of ['electron', 'chrome', 'node', 'v8']) {
+    replaceText(`${dependency}-version`, process.versions[dependency])
+  }
   replaceText('os-type', osType);
-  replaceText('arch-type', archType);
+  replaceText('arch-type', process.arch);
+  const appVersion = await ipcRenderer.invoke('get-app-version');
+  replaceText('app-version', appVersion);
 });
 
 console.log('electron.renderer: Electron versions exported');

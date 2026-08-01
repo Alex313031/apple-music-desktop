@@ -40,19 +40,8 @@ function previousTrack() {
          `
 }
 
-function getInfo() {
-  return `
-    try {
-      let trackName = MusicKit.getInstance().nowPlayingItem.attributes.name;
-      console.log('Current Track Title is ' + trackName);
-    } catch {
-      console.log('Track is not playing');
-    }`
-}
-
 exports.play = play;
 exports.pause = pause;
 exports.playPause = playPause;
 exports.nextTrack = nextTrack;
 exports.previousTrack = previousTrack;
-exports.getInfo = getInfo;

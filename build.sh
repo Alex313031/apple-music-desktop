@@ -25,10 +25,10 @@ export electron_config_cache="${PWD}/electron" &&
 # --help
 displayHelp () {
 	printf "\n" &&
-	printf "${bold}${GRE}Script to build Yiff Webview.${c0}\n" &&
+	printf "${bold}${GRE}Script to build Apple Music Desktop.${c0}\n" &&
 	printf "${bold}${YEL}Use the --deps flag to install build dependencies.${c0}\n" &&
 	printf "${bold}${YEL}Use the -i flag to run \`nvm install\` and \`npm install\`.${c0}\n" &&
-	printf "${bold}${YEL}Use the --build flag to build Yiff Webview.${c0}\n" &&
+	printf "${bold}${YEL}Use the --build flag to build Apple Music Desktop.${c0}\n" &&
 	printf "${bold}${YEL}Use the --clean flag to run \`npm run clean\`.${c0}\n" &&
 	printf "${bold}${YEL}Use the --distclean flag to run \`npm run distclean\`.${c0}\n" &&
 	printf "${bold}${YEL}Use the --dist flag to generate .zip and .deb/.exe packages.${c0}\n" &&
@@ -147,10 +147,10 @@ case $1 in
 esac
 
 printf "\n" &&
-printf "${bold}${GRE}Script to build Yiff Webview.${c0}\n" &&
+printf "${bold}${GRE}Script to build Apple Music Desktop.${c0}\n" &&
 printf "${bold}${YEL}Use the --deps flag to install build dependencies.${c0}\n" &&
 printf "${bold}${YEL}Use the -i flag to run \`nvm install\` and \`npm install\`.${c0}\n" &&
-printf "${bold}${YEL}Use the --build flag to build Yiff Webview.${c0}\n" &&
+printf "${bold}${YEL}Use the --build flag to build Apple Music Desktop.${c0}\n" &&
 printf "${bold}${YEL}Use the --clean flag to run \`npm run clean\`.${c0}\n" &&
 printf "${bold}${YEL}Use the --distclean flag to run \`npm run distclean\`.${c0}\n" &&
 printf "${bold}${YEL}Use the --dist flag to generate .zip and .deb/.exe packages.${c0}\n" &&

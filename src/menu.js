@@ -1,10 +1,7 @@
 const { BrowserWindow, Menu, screen, shell } = require('electron');
 const path = require('path');
 const electronLog = require('electron-log');
-
-function defaultUserAgent() {
-  return 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36';
-}
+const defaultUserAgent = require('./useragent.js');
 
 module.exports = (app, mainWindow, store) => {
   // Get app info
@@ -41,7 +38,7 @@ module.exports = (app, mainWindow, store) => {
       }
     });
     popoutWindow.webContents.userAgent = defaultUserAgent();
-    popoutWindow.loadURL('https://www.google.com/');
+    popoutWindow.loadURL('https://music.apple.com/');
     popoutWindow.setBounds({ x: secondaryWindowX });
     electronLog.info('Opened Popout Window');
   }
@@ -498,14 +495,13 @@ module.exports = (app, mainWindow, store) => {
             webPreferences: {
               nodeIntegration: false,
               nodeIntegrationInWorker: false,
-              contextIsolation: false,
-              sandbox: false,
+              contextIsolation: true,
+              sandbox: true,
               experimentalFeatures: true,
               devTools: true,
               preload: path.join(__dirname, 'preload/about-preload.js')
             }
           });
-          require('@electron/remote/main').enable(aboutWindow.webContents);
           aboutWindow.loadFile('./about.html');
           aboutWindow.setBounds({ x: secondaryWindowX });
           electronLog.info('Opened about.html');

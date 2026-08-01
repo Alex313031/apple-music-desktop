@@ -7,18 +7,11 @@ const fs = require('fs');
 const path = require('path');
 const mainMenu = require('./menu.js'); // For making native menu
 const mainLogger = require('./logger.js'); // Misc. logging
+const defaultUserAgent = require('./useragent.js'); // Shared spoofed UA string
 const isDev = process.env.NODE_ENV === 'development';
 
 // Create config.json
 const store = new Store();
-
-// UA variable
-function defaultUserAgent() {
-  return 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36';
-}
-
-// Initialize Electron remote module
-require('@electron/remote/main').initialize();
 
 // Restrict main.log size to 100Kb
 electronLog.initialize();
@@ -40,43 +33,45 @@ mainLogger.handleLogging(store);
 // Globally export what OS we are on
 const isLinux = process.platform === 'linux';
 const isWin = process.platform === 'win32';
-const isMac = process.platform === 'darwin';
 
 const argsCmd = process.argv; // Global cmdline object.
 let mainWindow; // Main Window object
 let tray; // OS tray object
-let mainActivated; // Global activate? object
 let mainURL; // Global URL destination object
 let mediaIsPlaying; // Global media state object
 let windowTitle; // Global Window title object
-// To be defined later when createTrackDialog() is invoked
-let trackTitle;
-let trackAlbum;
-let trackArtist;
 
-if (store.get('options.useBetaSite')) {
+// Compute the URL to load from the configured start tab / site options
+function getMainURL() {
+  const baseURL = store.get('options.useBetaSite')
+    ? 'https://beta.music.apple.com'
+    : 'https://music.apple.com';
   if (store.get('options.useBrowse')) {
-    mainURL = 'https://beta.music.apple.com/us/browse';
+    return baseURL + '/us/browse';
   } else if (store.get('options.useRecent')) {
-    mainURL = 'https://beta.music.apple.com/us/library/recently-added';
+    return baseURL + '/us/library/recently-added';
   } else if (store.get('options.useArtists')) {
-    mainURL = 'https://beta.music.apple.com/us/library/artists';
+    return baseURL + '/us/library/artists';
   } else {
-    mainURL = 'https://beta.music.apple.com/';
+    return baseURL + '/';
   }
-  windowTitle = appName + ' Beta';
-} else {
-  if (store.get('options.useBrowse')) {
-    mainURL = 'https://music.apple.com/us/browse';
-  } else if (store.get('options.useRecent')) {
-    mainURL = 'https://music.apple.com/us/library/recently-added';
-  } else if (store.get('options.useArtists')) {
-    mainURL = 'https://music.apple.com/us/library/artists';
-  } else {
-    mainURL = 'https://music.apple.com/';
-  }
-  windowTitle = appName;
 }
+
+function getWindowTitle() {
+  return store.get('options.useBetaSite') ? appName + ' Beta' : appName;
+}
+
+// Run a script in the main window's webpage, guarding against the
+// window already being closed or destroyed (e.g. tray actions during quit)
+function runInPage(script) {
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    return mainWindow.webContents.executeJavaScript(script);
+  }
+  return Promise.resolve(null);
+}
+
+mainURL = getMainURL();
+windowTitle = getWindowTitle();
 
 async function createWindow() {
   mainWindow = new BrowserWindow({
@@ -90,41 +85,50 @@ async function createWindow() {
     darkTheme: store.get('options.useLightMode') ? false : true,
     vibrancy: store.get('options.useLightMode') ? 'light' : 'ultra-dark',
     autoHideMenuBar: store.get('options.autoHideMenuBar') ? true : false,
-    frame: isMac ? true : true,
     webPreferences: {
       nodeIntegration: false,
       nodeIntegrationInWorker: false,
-      contextIsolation: false,
+      contextIsolation: true,
       sandbox: true,
       experimentalFeatures: true,
-      devTools: true,
-      preload: path.join(__dirname, 'preload/client-preload.js')
+      devTools: true
     }
   });
-  require('@electron/remote/main').enable(mainWindow.webContents);
 
   Menu.setApplicationMenu(mainMenu(app, mainWindow, store));
 
   // Reset the Window's size and location
   const windowDetails = store.get('options.windowDetails');
   const relaunchWindowDetails = store.get('relaunch.windowDetails');
-  if (relaunchWindowDetails) {
+  if (relaunchWindowDetails && relaunchWindowDetails.position) {
     mainWindow.setPosition(
       relaunchWindowDetails.position[0],
       relaunchWindowDetails.position[1]
     );
+    if (relaunchWindowDetails.size) {
+      mainWindow.setSize(
+        relaunchWindowDetails.size[0],
+        relaunchWindowDetails.size[1]
+      );
+    }
     store.delete('relaunch.windowDetails');
-  } else if (windowDetails) {
+  } else if (windowDetails && windowDetails.position) {
     mainWindow.setPosition(
       windowDetails.position[0],
       windowDetails.position[1]
     );
+    if (windowDetails.size) {
+      mainWindow.setSize(
+        windowDetails.size[0],
+        windowDetails.size[1]
+      );
+    }
   }
 
   // Detect and set config on null version
   if (!store.get('version')) {
     store.set('version', appVersion);
-    store.set('options.windowDetails', true);
+    store.set('options.windowDetails', {});
     electronLog.info('Initialized Configuration');
   } else {
     store.set('version', appVersion);
@@ -146,35 +150,23 @@ async function createWindow() {
   mainWindow.webContents.on('did-stop-loading', () => {
     browserDomReady();
   });
-  if (mainURL === 'https://beta.music.apple.com/') {
+  if (store.get('options.useBetaSite')) {
     electronLog.warn('Note: Using Beta site');
   }
-
-  // Handler for when the DOM is being unloaded
-  mainWindow.onbeforeunload = (e) => {
-    app.emit('pause');
-    e.returnValue = false
-  };
 
   // Emitted when the window is closing
   mainWindow.on('close', () => {
     // If enabled store the window details so they can be restored upon restart
     if (store.get('options.windowDetails')) {
-      if (mainWindow) {
-        store.set('options.windowDetails', {
-          position: mainWindow.getPosition()
-        });
-        electronLog.info('Saved windowDetails.');
-      } else {
-        electronLog.error('Error: mainWindow was not defined while trying to save windowDetails.');
-      }
+      store.set('options.windowDetails', {
+        position: mainWindow.getPosition(),
+        size: mainWindow.getSize()
+      });
+      electronLog.info('Saved windowDetails.');
     }
     app.emit('pause');
     store.delete('options.useMiniPlayer');
     electronLog.info('Closed mainWindow');
-    if (tray) {
-     // tray.destroy();
-    }
     mainWindow.destroy();
   });
 
@@ -197,40 +189,17 @@ app.on('reload', () => {
 });
 
 app.on('change-site', () => {
-  let logMessage;
+  mainURL = getMainURL();
+  windowTitle = getWindowTitle();
   if (store.get('options.useBetaSite')) {
-    if (store.get('options.useBrowse')) {
-      mainURL = 'https://beta.music.apple.com/us/browse';
-    } else if (store.get('options.useRecent')) {
-      mainURL = 'https://beta.music.apple.com/us/library/recently-added';
-    } else if (store.get('options.useArtists')) {
-      mainURL = 'https://beta.music.apple.com/us/library/artists';
-    } else {
-      mainURL = 'https://beta.music.apple.com/';
-    }
-    logMessage = 'Note: Switching to beta site';
-    windowTitle = appName + ' Beta';
+    electronLog.warn('Note: Switching to beta site');
   } else {
-    if (store.get('options.useBrowse')) {
-      mainURL = 'https://music.apple.com/us/browse';
-    } else if (store.get('options.useRecent')) {
-      mainURL = 'https://music.apple.com/us/library/recently-added';
-    } else if (store.get('options.useArtists')) {
-      mainURL = 'https://music.apple.com/us/library/artists';
-    } else {
-      mainURL = 'https://music.apple.com/';
-    }
-    logMessage = 'Note: Switching to regular site';
-    windowTitle = appName;
+    electronLog.warn('Note: Switching to regular site');
   }
   electronLog.info('Switching to ' + mainURL);
-  electronLog.warn(logMessage);
   mainWindow.webContents.userAgent = defaultUserAgent();
   mainWindow.loadURL(mainURL);
   mainWindow.setTitle(windowTitle);
-  mainWindow.on('page-title-updated', function(e) {
-    e.preventDefault();
-  });
 });
 
 function showFromTray() {
@@ -290,10 +259,9 @@ async function handleTray() {
 app.on('toggle-miniplayer', () => {
   if (store.get('options.useMiniPlayer')) {
     electronLog.info('Switching to MiniPlayer mode');
-    if (mainWindow.isMaximized) {
+    if (mainWindow.isMaximized()) {
       mainWindow.unmaximize();
     }
-    mainWindow.setSize(500, 500);
     mainWindow.setSize(360, 350);
     mainWindow.webContents.reload();
     // mainWindow.webContents.executeJavaScript("_miniPlayer.setMiniPlayer(true)").catch((e) => console.error(e));
@@ -341,6 +309,8 @@ contextMenu({
         webPreferences: {
           nodeIntegration: false,
           nodeIntegrationInWorker: false,
+          contextIsolation: true,
+          sandbox: true,
           experimentalFeatures: true,
           devTools: true
         }
@@ -364,6 +334,8 @@ contextMenu({
         webPreferences: {
           nodeIntegration: false,
           nodeIntegrationInWorker: false,
+          contextIsolation: true,
+          sandbox: true,
           experimentalFeatures: true,
           devTools: true
         }
@@ -387,6 +359,8 @@ contextMenu({
         webPreferences: {
           nodeIntegration: false,
           nodeIntegrationInWorker: false,
+          contextIsolation: true,
+          sandbox: true,
           experimentalFeatures: true,
           devTools: true
         }
@@ -403,7 +377,8 @@ app.on('restart', () => {
   electronLog.warn('Restarting App...');
 
   store.set('relaunch.windowDetails', {
-    position: mainWindow.getPosition()
+    position: mainWindow.getPosition(),
+    size: mainWindow.getSize()
   });
 
   // Close Window
@@ -419,7 +394,8 @@ app.on('relaunch', () => {
   electronLog.info('Relaunching ' + appName + '...');
 
   store.set('relaunch.windowDetails', {
-    position: mainWindow.getPosition()
+    position: mainWindow.getPosition(),
+    size: mainWindow.getSize()
   });
 
   // Close Window
@@ -459,37 +435,41 @@ app.on('restart-confirm', () => {
   });
 });
 
-ipcMain.handle('finished-preload', () => {
-  electronLog.info('[ electron:preload ] IPC Listeners Created');
+// Expose the app version to the about window
+ipcMain.handle('get-app-version', () => {
+  return appVersion;
 });
 
-ipcMain.on('track-name', (event, trackName, trackAlbumName, trackArtistName) => {
-  trackTitle = trackName;
-  trackAlbum = trackAlbumName;
-  trackArtist = trackArtistName;
-  // Print currently playing song to the terminal
-  if (trackName == 'NOTRACK') {
-    electronLog.info('Track is not playing');
-  } else {
-    electronLog.info('Now Playing: ' + trackTitle);
-  }
-  const trackInfo = [
-    'Currently playing Track is: ' + trackTitle,
-    '',
-    'From Album: ' + trackAlbum,
-    '',
-    'By Artist: ' + trackArtist
-  ];
-  dialog.showMessageBox({
-    type: 'info',
-    title: 'Now Playing Info',
-    message: trackInfo.join('\n'),
-    buttons: ['Ok']
-  });
-});
-
+// Fetch the currently playing track from the webpage and show it in a dialog
 function createTrackDialog() {
-  mainWindow.webContents.executeJavaScript(trackInfoScript);
+  runInPage(trackInfoScript).then((track) => {
+    if (track) {
+      electronLog.info('Now Playing: ' + track.name);
+      const trackInfo = [
+        'Currently playing Track is: ' + track.name,
+        '',
+        'From Album: ' + track.album,
+        '',
+        'By Artist: ' + track.artist
+      ];
+      dialog.showMessageBox({
+        type: 'info',
+        title: 'Now Playing Info',
+        message: trackInfo.join('\n'),
+        buttons: ['Ok']
+      });
+    } else {
+      electronLog.info('Track is not playing');
+      dialog.showMessageBox({
+        type: 'info',
+        title: 'Now Playing Info',
+        message: 'No Track is currently playing.',
+        buttons: ['Ok']
+      });
+    }
+  }).catch((error) => {
+    electronLog.error('createTrackDialog() failed: ' + error);
+  });
 }
 
 // This method is called when the BrowserWindow's DOM is ready
@@ -497,47 +477,45 @@ function createTrackDialog() {
 function browserDomReady() {
   // TODO: This is a temp fix and a proper fix should be developed
   if (mainWindow !== null) {
-    mainWindow.webContents.executeJavaScript(injectScript);
-    mainWindow.webContents.executeJavaScript(volumeScript);
-    mainWindow.webContents.executeJavaScript(musicKitInit);
-  }
-  if (store.get('options.devToolsOnStart')) {
-    mainWindow.openDevTools({ mode: 'detach' });
+    runInPage(injectScript);
+    runInPage(volumeScript);
+    runInPage(musicKitInit);
+    if (store.get('options.devToolsOnStart')) {
+      mainWindow.openDevTools({ mode: 'detach' });
+    }
   }
 }
 
 app.on('get-track-info', () => {
-  mainWindow.webContents.executeJavaScript(audioControlJS.getInfo());
   createTrackDialog();
 });
 
 app.on('play', () => {
-  mainWindow.webContents.executeJavaScript(audioControlJS.play());
+  runInPage(audioControlJS.play());
 });
 
 app.on('pause', () => {
-  mainWindow.webContents.executeJavaScript(audioControlJS.pause());
+  runInPage(audioControlJS.pause());
   if (mediaIsPlaying === true) {
     electronLog.info('Media was playing');
   }
 });
 
 app.on('play-pause', () => {
-  mainWindow.webContents.executeJavaScript(audioControlJS.playPause());
+  runInPage(audioControlJS.playPause());
 });
 
 app.on('next-track', () => {
-  mainWindow.webContents.executeJavaScript(audioControlJS.nextTrack());
+  runInPage(audioControlJS.nextTrack());
 });
 
 app.on('previous-track', () => {
-  mainWindow.webContents.executeJavaScript(audioControlJS.previousTrack());
+  runInPage(audioControlJS.previousTrack());
 });
 
 // Run when window is closed. This cleans up the mainWindow object to save resources.
 function mainWindowClosed() {
   mainWindow = null;
-  mainActivated = null;
 }
 
 function handleMediaState() {
@@ -557,9 +535,7 @@ app.on('toggle-menubar', () => {
 
 // Quit when all windows are closed.
 app.on('window-all-closed', () => {
-  //if (process.platform !== 'darwin') {
-    app.quit();
-  //}
+  app.quit();
 });
 
 app.on('will-quit', () => {
@@ -569,7 +545,7 @@ app.on('will-quit', () => {
 // On macOS it's common to re-create a window in the app when the
 // dock icon is clicked and there are no other windows open.
 app.on('activate', () => {
-  if (mainActivated === null) {
+  if (mainWindow === null) {
     electronLog.info('App Re-Activated [ Loading app.js ]');
     createWindow();
   }
@@ -604,16 +580,26 @@ function rejectEvent(event) {
 app.on('remote-get-current-window', rejectEvent);
 app.on('remote-get-guest-web-contents', rejectEvent);
 
+// Initialize Widevine, but don't block app startup if it fails,
+// otherwise the app hangs forever without ever creating a window
+async function initWidevine() {
+  try {
+    await components.whenReady();
+  } catch (error) {
+    electronLog.error('WidevineCDM failed to initialize: ' + error);
+    electronLog.warn('Note: Continuing without Widevine, DRM playback may not work');
+  }
+}
+
 // Fire it up
 app.whenReady().then(async() => {
   if (argsCmd.includes('--cdm-info')) {
-    await components.whenReady();
+    await initWidevine();
     console.log('WidevineCDM Component Info:\n');
     console.log(components.status());
     app.quit();
   } else {
-    // Initialize Widevine
-    await components.whenReady();
+    await initWidevine();
     logAppInfo();
     handleTray();
     createWindow();

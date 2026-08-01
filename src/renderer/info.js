@@ -1,21 +1,16 @@
 /* eslint-disable */
-try {
-  let trackName = MusicKit.getInstance().nowPlayingItem.attributes.name;
-  let trackAlbumName = MusicKit.getInstance().nowPlayingItem.attributes.albumName;
-  let trackArtistName = MusicKit.getInstance().nowPlayingItem.attributes.artistName;
-  /* Send track information back to the main process via ipcRenderer */
-  ipc.send('track-name', trackName, trackAlbumName, trackArtistName);
-} catch {
-  let trackName = 'NOTRACK';
-  let trackAlbumName = 'NOALBUM';
-  let trackArtistName = 'NOARTIST';
-  ipc.send('track-name', trackName, trackAlbumName, trackArtistName);
-}
-
-//window.addEventListener('DOMContentLoaded', () => {
-//  const replaceText = (selector, text) => {
-//    const element = document.getElementById(selector)
-//    if (element) element.innerText = text
-//  }
-//  replaceText(`current-track`, trackName)
-//});
+/* Evaluated via webContents.executeJavaScript(); the resulting
+   object (or null when nothing is playing) is returned directly
+   to the main process as the promise value. */
+(() => {
+  try {
+    const nowPlaying = MusicKit.getInstance().nowPlayingItem;
+    return {
+      name: nowPlaying.attributes.name,
+      album: nowPlaying.attributes.albumName,
+      artist: nowPlaying.attributes.artistName
+    };
+  } catch {
+    return null;
+  }
+})();

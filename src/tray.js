@@ -18,7 +18,6 @@ module.exports = (app) => {
         return trayIcon.resize({height: 22});
     } else {
         return trayIcon;
-        electronLog.info('Running on BSD');
     }
   };
   return Menu.buildFromTemplate([
