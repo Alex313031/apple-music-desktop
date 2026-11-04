@@ -19,4 +19,4 @@ function removeElementsByClass() {
 
 removeElementsByClass();
 
-console.log('electron.renderer: Injected index.js script');
+console.log('electron.renderer: Injected elements.js script');

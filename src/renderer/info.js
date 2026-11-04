@@ -1,4 +1,3 @@
-/* eslint-disable */
 try {
   let trackName = MusicKit.getInstance().nowPlayingItem.attributes.name;
   let trackAlbumName = MusicKit.getInstance().nowPlayingItem.attributes.albumName;

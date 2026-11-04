@@ -15,7 +15,7 @@ See the [Releases](https://github.com/Alex313031/apple-music-desktop/releases).
 
 ## Building
 
-Requires nodejs 16, or 18. It is reccomended to use [nvm](https://github.com/nvm-sh/nvm) for installing/managing node versions.
+Requires nodejs 22 or newer (the Electron 43 npm package needs Node >= 22.12). It is reccomended to use [nvm](https://github.com/nvm-sh/nvm) for installing/managing node versions.
 Yarn can also be used.
 
 ```bash

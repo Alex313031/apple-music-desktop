@@ -1,6 +1,6 @@
 ## apple-music-desktop humans.txt ##
 
-# Copyright (c) 2025 Alex313031.
+# Copyright (c) 2026 Alex313031.
 # https://humanstxt.org/
 
 /* ABOUT */

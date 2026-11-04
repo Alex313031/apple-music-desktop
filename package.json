@@ -3,15 +3,15 @@
   "appName": "Apple Music",
   "productName": "Apple Music",
   "applicationId": "com.alex313031.apple-music-desktop",
-  "version": "2.3.0",
+  "version": "2.4.0",
   "description": "An Electron app that provides a native Apple Music experience for Linux & Windows.",
   "author": "Alex313031",
   "license": "BSD-3-Clause",
-  "copyright": "Copyright © 2025 Alex313031",
+  "copyright": "Copyright © 2026 Alex313031",
   "repository": "https://github.com/Alex313031/apple-music-desktop",
   "main": "./src/app.js",
   "engines": {
-    "node": ">=18"
+    "node": ">=22"
   },
   "scripts": {
     "test": "npm run eslint ; npm run stylelint",
@@ -34,22 +34,23 @@
     "postinstall": "electron-builder install-app-deps"
   },
   "dependencies": {
-    "@electron/remote": "2.1.3",
-    "electron-context-menu": "3.6.1",
-    "electron-log": "5.4.3",
-    "electron-store": "8.2.0"
+    "electron-context-menu": "4.1.2",
+    "electron-log": "5.4.4",
+    "electron-store": "11.0.2",
+    "electron-util": "1.0.0"
   },
   "devDependencies": {
-    "@electron/asar": "3.4.1",
-    "electron": "git+https://github.com/castlabs/electron-releases#v30.5.1+wvcus",
-    "electron-builder": "24.13.3",
-    "electron-util": "0.18.1",
-    "eslint": "8.44.0",
+    "@electron/asar": "4.3.1",
+    "@eslint/js": "9.39.5",
+    "electron": "git+https://github.com/castlabs/electron-releases#v43.8.6+wvcus",
+    "electron-builder": "25.1.8",
+    "eslint": "9.39.5",
+    "globals": "14.0.0",
     "rimraf": "5.0.10",
-    "stylelint": "14.16.1",
-    "stylelint-config-standard": "29.0.0"
+    "stylelint": "16.26.1",
+    "stylelint-config-standard": "39.0.1"
   },
   "resolutions": {
-    "electron": "git+https://github.com/castlabs/electron-releases#v30.5.1+wvcus"
+    "electron": "git+https://github.com/castlabs/electron-releases#v43.8.6+wvcus"
   }
 }

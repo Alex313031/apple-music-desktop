@@ -1,11 +1,21 @@
 async function musicConfigure() {
+  // The Apple Music web player configures MusicKit itself and no longer
+  // exposes MusicKit.configure(), so calling it just throws. Only run this
+  // against builds of the site that still provide it.
+  if (typeof MusicKit === 'undefined') {
+    console.log('MusicKit is not defined on this page yet');
+    return;
+  }
+  if (typeof MusicKit.configure !== 'function') {
+    console.log('MusicKit.configure() is unavailable; the page configures MusicKit itself');
+    return;
+  }
   try {
-    // eslint-disable-next-line
     await MusicKit.configure({
       developerToken: 'fricktest',
       app: {
         name: 'apple-music-desktop',
-        build: '2.1.5'
+        build: '2.4.0'
       }
       // MusicKit global is now defined
     });

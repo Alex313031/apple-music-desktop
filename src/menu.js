@@ -1,10 +1,8 @@
 const { BrowserWindow, Menu, screen, shell } = require('electron');
 const path = require('path');
 const electronLog = require('electron-log');
-
-function defaultUserAgent() {
-  return 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36';
-}
+const { defaultUserAgent } = require('./useragent.js'); // Shared UA override
+const { openMainProcessDevTools } = require('./inspector.js'); // Main process debugger
 
 module.exports = (app, mainWindow, store) => {
   // Get app info
@@ -61,7 +59,9 @@ module.exports = (app, mainWindow, store) => {
         label: 'Go Back',
         accelerator: 'Alt+Left',
         click(item, focusedWindow) {
-          if (focusedWindow) focusedWindow.webContents.goBack();
+          if (!focusedWindow) return;
+          // webContents.goBack() is deprecated since Electron 32
+          focusedWindow.webContents.navigationHistory.goBack();
           const currentURL = focusedWindow.webContents.getURL();
           electronLog.info('Navigated backward to ' + [ currentURL ]);
         }
@@ -70,7 +70,9 @@ module.exports = (app, mainWindow, store) => {
         label: 'Go Forward',
         accelerator: 'Alt+Right',
         click(item, focusedWindow) {
-          if (focusedWindow) focusedWindow.webContents.goForward();
+          if (!focusedWindow) return;
+          // webContents.goForward() is deprecated since Electron 32
+          focusedWindow.webContents.navigationHistory.goForward();
           const currentURL = focusedWindow.webContents.getURL();
           electronLog.info('Navigated forward to ' + [ currentURL ]);
         }
@@ -268,15 +270,14 @@ module.exports = (app, mainWindow, store) => {
         label: 'Edit Config File',
         click() {
           electronLog.info('Editing Config File');
+          electronLog.info('\n Note that JSON must be a recognized file type \n for the OS to open the config.json file.\n');
           if (isLinux) {
-            electronLog.info('\n Note that JSON must be a recognized file type \n for the OS to open the config.json file.\n');
             electronLog.info('\n On Linux, a default text editor for handling JSON files must also be present and configured correctly.\n');
-            store.openInEditor();
-            return;
-          } else {
-            electronLog.info('\n Note that JSON must be a recognized file type \n for the OS to open the config.json file.\n');
-            store.openInEditor();
           }
+          // openInEditor() returns a Promise since electron-store v9
+          Promise.resolve(store.openInEditor()).catch((error) => {
+            electronLog.error('Could not open config.json in an editor: ' + error);
+          });
         }
       }
     ]
@@ -307,6 +308,7 @@ module.exports = (app, mainWindow, store) => {
         label: 'Toggle Developer Tools',
         accelerator: isMac ? 'Alt+Command+I' : 'Ctrl+Shift+I',
         click(item, focusedWindow) {
+          if (!focusedWindow) return;
           const currentURL = focusedWindow.webContents.getURL();
           electronLog.info('Toggling Developer Tools on ' + currentURL);
           focusedWindow.webContents.toggleDevTools();
@@ -372,21 +374,32 @@ module.exports = (app, mainWindow, store) => {
       },
       { type: 'separator' },
       {
-        label: 'Open Electron DevTools',
-        accelerator: isMac ? 'Cmd+Shift+F12' : 'F12',
-        click(item, focusedWindow) {
-          electronLog.info('Opening Electron DevTools on mainWindow.');
-          focusedWindow.openDevTools({ mode: 'detach' });
+        label: 'Inspect Main Process',
+        click() {
+          electronLog.info('Opening Electron DevTools on the main process.');
+          openMainProcessDevTools();
         }
       },
       {
-        label: 'Open Electron DevTools Extra',
-        accelerator: 'Ctrl+Shift+F12',
+        label: 'Open DevTools',
+        accelerator: 'F12',
+        click(item, focusedWindow) {
+          if (!focusedWindow) return;
+          const currentURL = focusedWindow.webContents.getURL();
+          electronLog.info('Opening Developer Tools on ' + currentURL);
+          focusedWindow.webContents.openDevTools();
+        }
+      },
+      {
+        // Hidden keyboard path for the main process debugger, since
+        // "Inspect Main Process" deliberately leaves F12 to the page
+        label: 'Inspect Main Process Extra',
+        accelerator: isMac ? 'Cmd+Shift+F12' : 'Ctrl+Shift+F12',
         visible: false,
         acceleratorWorksWhenHidden: true,
         click() {
-          electronLog.info('Opening Electron DevTools on mainWindow.');
-          mainWindow.openDevTools({ mode: 'detach' });
+          electronLog.info('Opening Electron DevTools on the main process.');
+          openMainProcessDevTools();
         }
       },
       {
@@ -460,7 +473,7 @@ module.exports = (app, mainWindow, store) => {
             darkTheme: store.get('options.useLightMode') ? false : true,
             title: 'humans.txt'
           });
-          humansWindow.loadFile('./humans.txt');
+          humansWindow.loadFile(path.join(__dirname, 'humans.txt'));
           humansWindow.setBounds({ x: secondaryWindowX });
           electronLog.info('Opened humans.txt :)');
         }
@@ -477,7 +490,7 @@ module.exports = (app, mainWindow, store) => {
             darkTheme: store.get('options.useLightMode') ? false : true,
             title: 'License'
           });
-          licenseWindow.loadFile('./license.md');
+          licenseWindow.loadFile(path.join(__dirname, 'license.md'));
           licenseWindow.setBounds({ x: secondaryWindowX });
           electronLog.info('Opened license.md');
         }
@@ -498,15 +511,14 @@ module.exports = (app, mainWindow, store) => {
             webPreferences: {
               nodeIntegration: false,
               nodeIntegrationInWorker: false,
-              contextIsolation: false,
-              sandbox: false,
+              contextIsolation: true,
+              sandbox: true,
               experimentalFeatures: true,
               devTools: true,
               preload: path.join(__dirname, 'preload/about-preload.js')
             }
           });
-          require('@electron/remote/main').enable(aboutWindow.webContents);
-          aboutWindow.loadFile('./about.html');
+          aboutWindow.loadFile(path.join(__dirname, 'about.html'));
           aboutWindow.setBounds({ x: secondaryWindowX });
           electronLog.info('Opened about.html');
         }

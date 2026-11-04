@@ -1,31 +1,28 @@
 const { app, BrowserWindow, components, dialog, ipcMain, Menu, nativeTheme, Tray } = require('electron');
 const electronLog = require('electron-log');
-const contextMenu = require('electron-context-menu');
-const Store = require('electron-store');
+// electron-context-menu v4+ is ESM-only, so require() yields its module
+// namespace and the function lives on .default
+const contextMenu = require('electron-context-menu').default;
+// electron-store v9+ is ESM-only, so require() yields its module namespace
+// and the class lives on .default
+const Store = require('electron-store').default;
 const audioControlJS = require('./audiocontrol.js');
 const fs = require('fs');
 const path = require('path');
 const mainMenu = require('./menu.js'); // For making native menu
 const mainLogger = require('./logger.js'); // Misc. logging
+const { defaultUserAgent } = require('./useragent.js'); // Shared UA override
 const isDev = process.env.NODE_ENV === 'development';
 
 // Create config.json
 const store = new Store();
-
-// UA variable
-function defaultUserAgent() {
-  return 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36';
-}
-
-// Initialize Electron remote module
-require('@electron/remote/main').initialize();
 
 // Restrict main.log size to 100Kb
 electronLog.initialize();
 electronLog.transports.file.maxSize = 1024 * 100;
 
 // Load in the header scripts for modifying DOM
-const injectScript = fs.readFileSync(path.join(__dirname, 'renderer/index.js'), 'utf8');
+const elementsScript = fs.readFileSync(path.join(__dirname, 'renderer/elements.js'), 'utf8');
 const volumeScript = fs.readFileSync(path.join(__dirname, 'renderer/volume.js'), 'utf8');
 const musicKitInit = fs.readFileSync(path.join(__dirname, 'renderer/musickit.js'), 'utf8');
 const trackInfoScript = fs.readFileSync(path.join(__dirname, 'renderer/info.js'), 'utf8');
@@ -88,38 +85,38 @@ async function createWindow() {
     useContentSize: true,
     icon: isWin ? path.join(__dirname, 'imgs/icon.ico') : path.join(__dirname, 'imgs/icon64.png'),
     darkTheme: store.get('options.useLightMode') ? false : true,
-    vibrancy: store.get('options.useLightMode') ? 'light' : 'ultra-dark',
     autoHideMenuBar: store.get('options.autoHideMenuBar') ? true : false,
     frame: isMac ? true : true,
     webPreferences: {
       nodeIntegration: false,
       nodeIntegrationInWorker: false,
-      contextIsolation: false,
+      contextIsolation: true,
       sandbox: true,
       experimentalFeatures: true,
       devTools: true,
       preload: path.join(__dirname, 'preload/client-preload.js')
     }
   });
-  require('@electron/remote/main').enable(mainWindow.webContents);
 
   Menu.setApplicationMenu(mainMenu(app, mainWindow, store));
 
   // Reset the Window's size and location
+  // (options.windowDetails may also be `true` or `{}` before a position was saved)
+  const hasPosition = (details) => details && Array.isArray(details.position) && details.position.length === 2;
   const windowDetails = store.get('options.windowDetails');
   const relaunchWindowDetails = store.get('relaunch.windowDetails');
-  if (relaunchWindowDetails) {
+  if (hasPosition(relaunchWindowDetails)) {
     mainWindow.setPosition(
       relaunchWindowDetails.position[0],
       relaunchWindowDetails.position[1]
     );
-    store.delete('relaunch.windowDetails');
-  } else if (windowDetails) {
+  } else if (hasPosition(windowDetails)) {
     mainWindow.setPosition(
       windowDetails.position[0],
       windowDetails.position[1]
     );
   }
+  store.delete('relaunch.windowDetails');
 
   // Detect and set config on null version
   if (!store.get('version')) {
@@ -150,12 +147,6 @@ async function createWindow() {
     electronLog.warn('Note: Using Beta site');
   }
 
-  // Handler for when the DOM is being unloaded
-  mainWindow.onbeforeunload = (e) => {
-    app.emit('pause');
-    e.returnValue = false
-  };
-
   // Emitted when the window is closing
   mainWindow.on('close', () => {
     // If enabled store the window details so they can be restored upon restart
@@ -182,13 +173,9 @@ async function createWindow() {
     handleMediaState();
   });
 
-  // Emitted when the window is closed.
-  mainWindow.on('closed', () => {
-    mainWindowClosed();
-    if (isDev) {
-      electronLog.warn('mainWindowClosed()');
-    }
-  });
+  // Emitted when the window is closed. Registered as a named listener so that
+  // the 'restart' and 'relaunch' handlers can actually remove it again.
+  mainWindow.on('closed', mainWindowClosed);
 }
 
 app.on('reload', () => {
@@ -228,9 +215,8 @@ app.on('change-site', () => {
   mainWindow.webContents.userAgent = defaultUserAgent();
   mainWindow.loadURL(mainURL);
   mainWindow.setTitle(windowTitle);
-  mainWindow.on('page-title-updated', function(e) {
-    e.preventDefault();
-  });
+  // Note: 'page-title-updated' is already suppressed in createWindow(). Adding
+  // another listener here would leak one per site switch.
 });
 
 function showFromTray() {
@@ -267,6 +253,11 @@ async function handleTray() {
     if (store.get('options.disableTray')) {
       return;
     } else {
+      // 'relaunch' calls handleTray() again, so replace any existing tray
+      // instead of leaving a second orphaned icon behind
+      if (tray && !tray.isDestroyed()) {
+        tray.destroy();
+      }
       const trayContextMenu = require('./tray.js');
       // Set the tray icon and name
       const trayIcon = isWin ? path.join(__dirname, 'imgs/icon.ico') : path.join(__dirname, 'imgs/icon48.png');
@@ -290,10 +281,9 @@ async function handleTray() {
 app.on('toggle-miniplayer', () => {
   if (store.get('options.useMiniPlayer')) {
     electronLog.info('Switching to MiniPlayer mode');
-    if (mainWindow.isMaximized) {
+    if (mainWindow.isMaximized()) {
       mainWindow.unmaximize();
     }
-    mainWindow.setSize(500, 500);
     mainWindow.setSize(360, 350);
     mainWindow.webContents.reload();
     // mainWindow.webContents.executeJavaScript("_miniPlayer.setMiniPlayer(true)").catch((e) => console.error(e));
@@ -463,6 +453,9 @@ ipcMain.handle('finished-preload', () => {
   electronLog.info('[ electron:preload ] IPC Listeners Created');
 });
 
+// about.html reads the app version from package.json via the main process
+ipcMain.handle('get-app-version', () => appVersion);
+
 ipcMain.on('track-name', (event, trackName, trackAlbumName, trackArtistName) => {
   trackTitle = trackName;
   trackAlbum = trackAlbumName;
@@ -488,56 +481,69 @@ ipcMain.on('track-name', (event, trackName, trackAlbumName, trackArtistName) => 
   });
 });
 
+// Run a script inside the main window's page. Failures (e.g. the window is
+// already being destroyed during close/quit, or the page threw) are logged
+// instead of becoming unhandled promise rejections in the main process.
+function runInMainWindow(script) {
+  if (!mainWindow || mainWindow.isDestroyed()) {
+    return Promise.resolve();
+  }
+  return mainWindow.webContents.executeJavaScript(script).catch((error) => {
+    electronLog.warn('executeJavaScript failed: ' + error);
+  });
+}
+
 function createTrackDialog() {
-  mainWindow.webContents.executeJavaScript(trackInfoScript);
+  runInMainWindow(trackInfoScript);
 }
 
 // This method is called when the BrowserWindow's DOM is ready
-// it is used to inject the index.js into the webpage.
+// it is used to inject the renderer scripts into the webpage.
 function browserDomReady() {
   // TODO: This is a temp fix and a proper fix should be developed
-  if (mainWindow !== null) {
-    mainWindow.webContents.executeJavaScript(injectScript);
-    mainWindow.webContents.executeJavaScript(volumeScript);
-    mainWindow.webContents.executeJavaScript(musicKitInit);
-  }
-  if (store.get('options.devToolsOnStart')) {
-    mainWindow.openDevTools({ mode: 'detach' });
+  runInMainWindow(elementsScript);
+  runInMainWindow(volumeScript);
+  runInMainWindow(musicKitInit);
+  if (store.get('options.devToolsOnStart') && mainWindow) {
+    mainWindow.webContents.openDevTools({ mode: 'detach' });
   }
 }
 
 app.on('get-track-info', () => {
-  mainWindow.webContents.executeJavaScript(audioControlJS.getInfo());
+  runInMainWindow(audioControlJS.getInfo());
   createTrackDialog();
 });
 
 app.on('play', () => {
-  mainWindow.webContents.executeJavaScript(audioControlJS.play());
+  runInMainWindow(audioControlJS.play());
 });
 
 app.on('pause', () => {
-  mainWindow.webContents.executeJavaScript(audioControlJS.pause());
+  runInMainWindow(audioControlJS.pause());
   if (mediaIsPlaying === true) {
     electronLog.info('Media was playing');
   }
 });
 
 app.on('play-pause', () => {
-  mainWindow.webContents.executeJavaScript(audioControlJS.playPause());
+  runInMainWindow(audioControlJS.playPause());
 });
 
 app.on('next-track', () => {
-  mainWindow.webContents.executeJavaScript(audioControlJS.nextTrack());
+  runInMainWindow(audioControlJS.nextTrack());
 });
 
 app.on('previous-track', () => {
-  mainWindow.webContents.executeJavaScript(audioControlJS.previousTrack());
+  runInMainWindow(audioControlJS.previousTrack());
 });
 
 // Run when window is closed. This cleans up the mainWindow object to save resources.
 function mainWindowClosed() {
   mainWindow = null;
   mainActivated = null;
+  if (isDev) {
+    electronLog.warn('mainWindowClosed()');
+  }
 }
 
 function handleMediaState() {
@@ -575,6 +581,12 @@ app.on('activate', () => {
   }
 });
 
+// Present a plain Chrome User-Agent app-wide. Individual windows also set this,
+// but the fallback covers everything else that makes requests (subresources,
+// workers, and any window that forgets to set it), so no request carries the
+// "Electron/x.y.z" token that Apple Music objects to.
+app.userAgentFallback = defaultUserAgent();
+
 // Append some Chromium command-line switches for GPU acceleration and other features
 app.commandLine.appendSwitch('enable-local-file-accesses');
 app.commandLine.appendSwitch('enable-quic');
@@ -595,14 +607,9 @@ function logAppInfo() {
   mainLogger.startLogging(store);
 }
 
-// Called on disallowed remote APIs below
-function rejectEvent(event) {
-  event.preventDefault();
-}
-
-/* Restrict certain Electron APIs in the renderer process for security */
-app.on('remote-get-current-window', rejectEvent);
-app.on('remote-get-guest-web-contents', rejectEvent);
+// Note: the 'remote-get-current-window' / 'remote-get-guest-web-contents'
+// guards that used to live here only fired for @electron/remote, which the app
+// no longer uses. The renderers run with contextIsolation and sandbox instead.
 
 // Fire it up
 app.whenReady().then(async() => {
