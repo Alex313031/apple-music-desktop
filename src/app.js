@@ -620,7 +620,11 @@ app.whenReady().then(async() => {
     app.quit();
   } else {
     // Initialize Widevine
-    await components.whenReady();
+    try {
+      await components.whenReady();
+    } catch (error) {
+      electronLog.warn('WidevineCDM component failed to initialize; opening Apple Music without protected playback: ' + error);
+    }
     logAppInfo();
     handleTray();
     createWindow();
