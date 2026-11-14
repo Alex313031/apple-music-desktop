@@ -14,7 +14,7 @@ const mainLogger = require('./logger.js'); // Misc. logging
 const { defaultUserAgent } = require('./useragent.js'); // Shared UA override
 const isDev = process.env.NODE_ENV === 'development';
 
-// Create config.json
+// Create storage config.json
 const store = new Store();
 
 // Restrict main.log size to 100Kb
@@ -75,7 +75,19 @@ if (store.get('options.useBetaSite')) {
   windowTitle = appName;
 }
 
+// Push the stored light/dark preference into Chromium. Changing themeSource
+// re-evaluates prefers-color-scheme in every live renderer, and both the
+// Apple Music web player and our own pages (about.css) pick their palette
+// from that media query, so this restyles them without a reload.
+function applyTheme() {
+  const useLightMode = store.get('options.useLightMode') ? true : false;
+  nativeTheme.themeSource = useLightMode ? 'light' : 'dark';
+  return useLightMode;
+}
+
 async function createWindow() {
+  applyTheme();
+
   mainWindow = new BrowserWindow({
     title: windowTitle,
     resizable: true,
@@ -127,12 +139,6 @@ async function createWindow() {
     store.set('version', appVersion);
   }
 
-  if (store.get('options.useLightMode')) {
-    nativeTheme.themeSource = 'light';
-  } else {
-    nativeTheme.themeSource = 'dark';
-  }
-
   // Load the index.html or webpage of the app.
   mainWindow.webContents.userAgent = defaultUserAgent();
   mainWindow.loadURL(mainURL);
@@ -181,6 +187,16 @@ async function createWindow() {
 app.on('reload', () => {
   mainWindow.reload();
   electronLog.info('mainWindow reloaded');
+});
+
+// Switch between light and dark mode in place, no restart needed
+app.on('toggle-theme', () => {
+  const useLightMode = applyTheme();
+  // Rebuild the menu so the Settings item's label flips to the other mode
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    Menu.setApplicationMenu(mainMenu(app, mainWindow, store));
+  }
+  electronLog.info('Switched to ' + (useLightMode ? 'light' : 'dark') + ' mode');
 });
 
 app.on('change-site', () => {

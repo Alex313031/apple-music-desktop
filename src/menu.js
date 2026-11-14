@@ -131,7 +131,7 @@ module.exports = (app, mainWindow, store) => {
           } else {
             store.set('options.useLightMode', true);
           }
-          app.emit('restart-confirm');
+          app.emit('toggle-theme');
         },
         checked: false
       },
